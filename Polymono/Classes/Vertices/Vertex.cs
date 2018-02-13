@@ -1,10 +1,8 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 
-namespace Polymono.Classes.Vertices
-{
-    struct Vertex
-    {
+namespace Polymono.Classes.Vertices {
+    struct Vertex {
         public const int Size = (3 + 4 + 2) * 4;
 
         public Vector3 Position;
@@ -19,8 +17,7 @@ namespace Polymono.Classes.Vertices
         }
     }
 
-    struct ColouredVertex
-    {
+    struct ColouredVertex {
         public const int Size = (3 + 4) * 4;
 
         public Vector3 Position;
@@ -33,8 +30,7 @@ namespace Polymono.Classes.Vertices
         }
     }
 
-    struct NormalVertex
-    {
+    struct NormalVertex {
         public const int Size = (3 + 3 + 4) * 4;
 
         public Vector3 Position;

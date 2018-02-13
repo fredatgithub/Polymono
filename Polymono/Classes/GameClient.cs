@@ -18,10 +18,8 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes
-{
-    class GameClient : GameWindow
-    {
+namespace Polymono.Classes {
+    class GameClient : GameWindow {
         // Programs
         public Dictionary<ProgramIDs, ShaderProgram> Programs;
         // Models
@@ -34,8 +32,7 @@ namespace Polymono.Classes
         public Board Board;
         public Player Player;
 
-        public enum ProgramIDs
-        {
+        public enum ProgramIDs {
             Default, Textured, Coloured, Full, Player
         }
 
@@ -53,7 +50,7 @@ namespace Polymono.Classes
             Models = new Dictionary<int, AModel>();
             Camera = new Camera();
         }
-        
+
         protected override void OnLoad(EventArgs e)
         {
             // Enable OpenGL settings.
@@ -61,26 +58,25 @@ namespace Polymono.Classes
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.DebugOutput);
             GL.DebugMessageCallback((DebugSource source, DebugType type, int id,
-                DebugSeverity severity, int length, IntPtr message, IntPtr userParam) =>
-            {
-                switch (type)
-                {
-                    case DebugType.DebugTypeError:
-                        Polymono.Debug($"OpenGL error.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
-                        break;
-                    case DebugType.DebugTypeDeprecatedBehavior:
-                    case DebugType.DebugTypeUndefinedBehavior:
-                    case DebugType.DebugTypePortability:
-                    case DebugType.DebugTypePerformance:
-                    case DebugType.DebugTypeOther:
-                    case DebugType.DebugTypeMarker:
-                    case DebugType.DebugTypePushGroup:
-                    case DebugType.DebugTypePopGroup:
-                    default:
-                        Polymono.Debug($"OpenGL debug message.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
-                        break;
-                }
-            }, (IntPtr)0);
+                DebugSeverity severity, int length, IntPtr message, IntPtr userParam) => {
+                    switch (type)
+                    {
+                        case DebugType.DebugTypeError:
+                            Polymono.Debug($"OpenGL error.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
+                            break;
+                        case DebugType.DebugTypeDeprecatedBehavior:
+                        case DebugType.DebugTypeUndefinedBehavior:
+                        case DebugType.DebugTypePortability:
+                        case DebugType.DebugTypePerformance:
+                        case DebugType.DebugTypeOther:
+                        case DebugType.DebugTypeMarker:
+                        case DebugType.DebugTypePushGroup:
+                        case DebugType.DebugTypePopGroup:
+                        default:
+                            Polymono.Debug($"OpenGL debug message.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
+                            break;
+                    }
+                }, (IntPtr)0);
 
             // Add shader programs.
             Programs.Add(ProgramIDs.Default, new ShaderProgram("vs.glsl", "fs.glsl", "Default"));
@@ -109,13 +105,11 @@ namespace Polymono.Classes
                 Matrix4.CreateRotationX(ToRadians(-90.0f)) *
                 Matrix4.CreateScale(5.0f);
 
-            Board = new Board()
-            {
+            Board = new Board() {
                 Model = new Model(vertices, indices, modelMatrix, @"Resources\Textures\polymono.png")
             };
 
-            Player = new Player()
-            {
+            Player = new Player() {
                 Model = new ModelObject(@"Resources\Objects\player.obj", Color4.Aqua)
             };
 

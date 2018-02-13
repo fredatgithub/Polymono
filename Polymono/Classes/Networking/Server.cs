@@ -38,7 +38,7 @@ namespace Polymono.Classes.Networking {
                 Polymono.Debug(e.ToString());
             }
         }
-        
+
         public override void Send(params Packet[] packets)
         {
             foreach (Packet packet in packets)

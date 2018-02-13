@@ -4,10 +4,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Game
-{
-    class Player : GameObject
-    {
+namespace Polymono.Classes.Game {
+    class Player : GameObject {
         public Player()
         {
 

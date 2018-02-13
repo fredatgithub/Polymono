@@ -7,10 +7,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Game
-{
-    class Board : GameObject
-    {
+namespace Polymono.Classes.Game {
+    class Board : GameObject {
         public Property[] Property;
 
         public Board()

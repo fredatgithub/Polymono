@@ -123,8 +123,8 @@ namespace Polymono.Classes.Networking {
                 TargetID = BitConverter.ToInt32(ByteBuffer, PacketHandler.TypeSize);
                 Terminate = Convert.ToBoolean(
                     ByteBuffer[PacketHandler.TypeSize + PacketHandler.TargetIDSize]);
-                DataBuffer = Encoding.UTF8.GetString(ByteBuffer, 
-                    PacketHandler.TypeSize + PacketHandler.TargetIDSize + PacketHandler.TerminatorSize, 
+                DataBuffer = Encoding.UTF8.GetString(ByteBuffer,
+                    PacketHandler.TypeSize + PacketHandler.TargetIDSize + PacketHandler.TerminatorSize,
                     PacketHandler.DataSize);
                 Polymono.Debug("Conversion to objects finished.");
                 Polymono.Debug($"Type: {Type}");

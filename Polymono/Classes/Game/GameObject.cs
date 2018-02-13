@@ -5,10 +5,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Game
-{
-    class GameObject
-    {
+namespace Polymono.Classes.Game {
+    class GameObject {
         public AModel Model;
 
         public GameObject()

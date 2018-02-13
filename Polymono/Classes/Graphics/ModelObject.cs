@@ -7,10 +7,8 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Polymono.Classes.Graphics
-{
-    class ModelObject : AModel
-    {
+namespace Polymono.Classes.Graphics {
+    class ModelObject : AModel {
         // Buffer references
         public int VBO;
         public int VAO;
@@ -84,12 +82,10 @@ namespace Polymono.Classes.Graphics
                 {
                     LoadFromString(reader.ReadToEnd(), colour);
                 }
-            }
-            catch (FileNotFoundException e)
+            } catch (FileNotFoundException e)
             {
                 Polymono.Error($"File not found: {filename + Environment.NewLine + e.ToString()}");
-            }
-            catch (Exception e)
+            } catch (Exception e)
             {
                 Console.WriteLine($"Error loading file: {filename + Environment.NewLine + e.ToString()}");
             }
@@ -128,14 +124,12 @@ namespace Polymono.Classes.Graphics
                         {
                             Console.WriteLine("Error parsing vertex: {0}", line);
                         }
-                    }
-                    else
+                    } else
                     {
                         Console.WriteLine("Error parsing vertex: {0}", line);
                     }
                     verts.Add(vec);
-                }
-                else if (line.StartsWith("vt ")) // Texture coordinate
+                } else if (line.StartsWith("vt ")) // Texture coordinate
                 {
                     // Cut off beginning of line
                     String temp = line.Substring(2);
@@ -151,14 +145,12 @@ namespace Polymono.Classes.Graphics
                         {
                             Console.WriteLine("Error parsing texture coordinate: {0}", line);
                         }
-                    }
-                    else
+                    } else
                     {
                         Console.WriteLine("Error parsing texture coordinate: {0}", line);
                     }
                     texs.Add(vec);
-                }
-                else if (line.StartsWith("vn ")) // Normal vector
+                } else if (line.StartsWith("vn ")) // Normal vector
                 {
                     // Cut off beginning of line
                     String temp = line.Substring(2);
@@ -175,14 +167,12 @@ namespace Polymono.Classes.Graphics
                         {
                             Console.WriteLine("Error parsing normal: {0}", line);
                         }
-                    }
-                    else
+                    } else
                     {
                         Console.WriteLine("Error parsing normal: {0}", line);
                     }
                     normals.Add(vec);
-                }
-                else if (line.StartsWith("f ")) // Face definition
+                } else if (line.StartsWith("f ")) // Face definition
                 {
                     // Cut off beginning of line
                     String temp = line.Substring(2);
@@ -203,22 +193,19 @@ namespace Polymono.Classes.Graphics
                             success |= int.TryParse(faceparts[0].Split('/')[2], out n1);
                             success |= int.TryParse(faceparts[1].Split('/')[2], out n2);
                             success |= int.TryParse(faceparts[2].Split('/')[2], out n3);
-                        }
-                        else
+                        } else
                         {
                             if (texs.Count > v1 && texs.Count > v2 && texs.Count > v3)
                             {
                                 t1 = v1; t2 = v2; t3 = v3;
-                            }
-                            else
+                            } else
                             {
                                 t1 = 0; t2 = 0; t3 = 0;
                             }
                             if (normals.Count > v1 && normals.Count > v2 && normals.Count > v3)
                             {
                                 n1 = v1; n2 = v2; n3 = v3;
-                            }
-                            else
+                            } else
                             {
                                 n1 = 0; n2 = 0; n3 = 0;
                             }
@@ -227,8 +214,7 @@ namespace Polymono.Classes.Graphics
                         if (!success)
                         {
                             Console.WriteLine("Error parsing face: {0}", line);
-                        }
-                        else
+                        } else
                         {
                             TempVertex tv1 = new TempVertex(v1, n1, t1);
                             TempVertex tv2 = new TempVertex(v2, n2, t2);
@@ -236,8 +222,7 @@ namespace Polymono.Classes.Graphics
                             face = new Tuple<TempVertex, TempVertex, TempVertex>(tv1, tv2, tv3);
                             faces.Add(face);
                         }
-                    }
-                    else
+                    } else
                     {
                         Console.WriteLine("Error parsing face: {0}", line);
                     }
@@ -257,8 +242,7 @@ namespace Polymono.Classes.Graphics
         }
     }
 
-    class TempVertex
-    {
+    class TempVertex {
         public int Vertex;
         public int Normal;
         public int Texcoord;

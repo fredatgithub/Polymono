@@ -8,10 +8,8 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Graphics
-{
-    class Model : AModel
-    {
+namespace Polymono.Classes.Graphics {
+    class Model : AModel {
         // Buffer references
         public int VBO;
         public int VAO;
@@ -22,7 +20,7 @@ namespace Polymono.Classes.Graphics
         public int[] Indices;
         // Matrices
         public Matrix4 ModelMatrix;
-        
+
         public Model() : this(new List<Vertex>(), new int[] { 0, 1, 2 }, Matrix4.Identity)
         {
 

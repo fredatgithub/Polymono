@@ -20,7 +20,7 @@ namespace Polymono.Classes.Graphics {
         public float MovementSpeed = 2.5f;
         public float MouseSensitivity = 0.1f;
         public float Zoom = 45.0f;
-        
+
         public Matrix4 GetViewMatrix()
         {
             return Matrix4.LookAt(Position, Position + Front, Up);

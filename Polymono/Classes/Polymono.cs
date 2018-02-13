@@ -86,7 +86,7 @@ namespace Polymono.Classes {
                 tickRate = 120;
             }
             Print($"Using {tickRate} tick rate.");
-            using (GameClient game = new GameClient())  
+            using (GameClient game = new GameClient())
             {
                 game.Run(60.0d, tickRate);
             }
