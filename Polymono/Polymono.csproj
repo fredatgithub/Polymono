@@ -50,10 +50,13 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="Classes\Game\Dice.cs" />
     <Compile Include="Classes\Game\GameObject.cs" />
     <Compile Include="Classes\Graphics\Camera.cs" />
     <Compile Include="Classes\GameClient.cs" />
     <Compile Include="Classes\Graphics\AModel.cs" />
+    <Compile Include="Classes\Graphics\Light.cs" />
+    <Compile Include="Classes\Graphics\Material.cs" />
     <Compile Include="Classes\Graphics\Model.cs" />
     <Compile Include="Classes\Graphics\ModelObject.cs" />
     <Compile Include="Classes\Networking\AClient.cs" />
@@ -70,6 +73,12 @@
     <Compile Include="Classes\Graphics\ShaderProgram.cs" />
     <Compile Include="Classes\Vertices\Vertex.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Content Include="Resources\Textures\cubedie.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\cube_textured_uv.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\Textures\opentksquare.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -122,6 +131,21 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Graphics\vs_player.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Graphics\fs_dice.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Graphics\vs_dice.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Objects\cube.mtl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Objects\cube.obj">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Objects\opentk.mtl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

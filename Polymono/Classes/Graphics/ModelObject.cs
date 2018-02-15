@@ -9,25 +9,62 @@ using System.Linq;
 
 namespace Polymono.Classes.Graphics {
     class ModelObject : AModel {
-        // Buffer references
-        public int VBO;
-        public int VAO;
         // Vertex data
-        public List<Tuple<NormalVertex, NormalVertex, NormalVertex>> Faces;
-        public NormalVertex[] Vertices;
+        public List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>> Faces;
+        public ObjectVertex[] Vertices;
         // Matrices
-        public Matrix4 ModelMatrix = Matrix4.Identity;
+        public Matrix4 ModelMatrix;
+        // Materials
+        public Material Material;
+        // Textures
+        public Dictionary<string, int> Textures;
 
-        public ModelObject(string filename) : this(filename, Color4.White)
+        public ModelObject(string filename, 
+            string textureLocation = @"Resources\Textures\opentksquare.png", 
+            string materialLocation = @"Resources\Objects\opentksquare.mtl",
+            string materialName = @"opentk1") :
+            this(filename, Color4.White, Matrix4.Identity, textureLocation, materialLocation, materialName)
         {
 
         }
 
-        public ModelObject(string filename, Color4 colour) : base()
+        public ModelObject(string filename, Matrix4 modelMatrix, 
+            string textureLocation = @"Resources\Textures\opentksquare.png", 
+            string materialLocation = @"Resources\Objects\opentksquare.mtl",
+            string materialName = @"opentk1") :
+            this(filename, Color4.White, modelMatrix, textureLocation, materialLocation, materialName)
         {
-            Faces = new List<Tuple<NormalVertex, NormalVertex, NormalVertex>>();
-            Vertices = new NormalVertex[0];
+
+        }
+
+        public ModelObject(string filename, Color4 colour, Matrix4 modelMatrix, 
+            string textureLocation = @"Resources\Textures\opentksquare.png", 
+            string materialLocation = @"Resources\Objects\opentksquare.mtl",
+            string materialName = @"opentk1") :
+            base()
+        {
+            Faces = new List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>>();
+            Vertices = new ObjectVertex[0];
+            ModelMatrix = modelMatrix;
+            Textures = new Dictionary<string, int>();
             LoadFromFile(filename, colour);
+            // Load materials.
+            Material = CreateMaterial(materialLocation, materialName);
+            // Load texture.
+            TextureID = CreateTexture(textureLocation);
+        }
+
+        public ModelObject(string filename, Color4 colour, Matrix4 modelMatrix, 
+            string materialLocation = @"Resources\Objects\opentksquare.mtl",
+            string materialName = @"opentk1")
+        {
+            Faces = new List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>>();
+            Vertices = new ObjectVertex[0];
+            ModelMatrix = modelMatrix;
+            Textures = new Dictionary<string, int>();
+            LoadFromFile(filename, colour);
+            // Load materials.
+            Material = CreateMaterial(materialLocation, materialName);
         }
 
         public override void CreateBuffer()
@@ -38,13 +75,13 @@ namespace Polymono.Classes.Graphics {
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
             // Input data to buffer.
-            GL.NamedBufferStorage(VBO, NormalVertex.Size * Vertices.Length, Vertices, BufferStorageFlags.MapWriteBit);
+            GL.NamedBufferStorage(VBO, ObjectVertex.Size * Vertices.Length, Vertices, BufferStorageFlags.MapWriteBit);
             // Set vertex attribute pointers.
             // Position
             GL.VertexArrayAttribBinding(VAO, 0, 0);
             GL.EnableVertexArrayAttrib(VAO, 0);
             GL.VertexArrayAttribFormat(VAO, 0, 3, VertexAttribType.Float, false, 0);
-            // Colour
+            // Normal
             GL.VertexArrayAttribBinding(VAO, 1, 0);
             GL.EnableVertexArrayAttrib(VAO, 1);
             GL.VertexArrayAttribFormat(VAO, 1, 3, VertexAttribType.Float, false, 3 * sizeof(float));
@@ -52,25 +89,39 @@ namespace Polymono.Classes.Graphics {
             GL.VertexArrayAttribBinding(VAO, 2, 0);
             GL.EnableVertexArrayAttrib(VAO, 2);
             GL.VertexArrayAttribFormat(VAO, 2, 4, VertexAttribType.Float, false, (3 + 3) * sizeof(float));
+            // Texture
+            GL.VertexArrayAttribBinding(VAO, 3, 0);
+            GL.EnableVertexArrayAttrib(VAO, 3);
+            GL.VertexArrayAttribFormat(VAO, 3, 4, VertexAttribType.Float, false, (3 + 3 + 4) * sizeof(float));
             // Link
-            GL.VertexArrayVertexBuffer(VAO, 0, VBO, IntPtr.Zero, NormalVertex.Size);
+            GL.VertexArrayVertexBuffer(VAO, 0, VBO, IntPtr.Zero, ObjectVertex.Size);
             // Reset bindings.
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             GL.BindVertexArray(0);
         }
 
-        public override void Render()
+        public override void RenderObject(ProgramID id)
         {
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
             GL.BindVertexArray(VAO);
+            GL.BindTexture(TextureTarget.Texture2D, TextureID);
             GL.UniformMatrix4(16, false, ref ModelMatrix);
+            // Draw uniforms if material mapping is enabled.
+            if (Material != null && id == ProgramID.Dice)
+            {
+                GL.Uniform3(8, Material.AmbientColour);
+                GL.Uniform3(9, Material.DiffuseColour);
+                GL.Uniform3(10, Material.SpecularColour);
+                GL.Uniform1(11, Material.SpecularExponent);
+            }
+            // Draw arrays...
             GL.DrawArrays(PrimitiveType.Triangles, 0, Vertices.Length);
         }
 
         public override void Delete()
         {
-            GL.DeleteBuffer(VBO);
             GL.DeleteVertexArray(VAO);
+            GL.DeleteBuffer(VBO);
+            GL.DeleteTexture(TextureID);
         }
 
         public void LoadFromFile(string filename, Color4 colour)
@@ -102,8 +153,8 @@ namespace Polymono.Classes.Graphics {
             List<Tuple<TempVertex, TempVertex, TempVertex>> faces = new List<Tuple<TempVertex, TempVertex, TempVertex>>();
             // Base values
             verts.Add(new Vector3());
-            texs.Add(new Vector2());
             normals.Add(new Vector3());
+            texs.Add(new Vector2());
             // Read file line by line
             foreach (String line in lines)
             {
@@ -228,17 +279,68 @@ namespace Polymono.Classes.Graphics {
                     }
                 }
             }
-            Vertices = new NormalVertex[faces.Capacity * 3];
+            Vertices = new ObjectVertex[faces.Capacity * 3];
             int tempIndex = 0;
             foreach (var face in faces)
             {
-                Vertices[tempIndex++] = new NormalVertex(
-                    verts[face.Item1.Vertex], normals[face.Item1.Normal], colour);
-                Vertices[tempIndex++] = new NormalVertex(
-                    verts[face.Item2.Vertex], normals[face.Item2.Normal], colour);
-                Vertices[tempIndex++] = new NormalVertex(
-                    verts[face.Item3.Vertex], normals[face.Item3.Normal], colour);
+                Vertices[tempIndex++] = new ObjectVertex(
+                    verts[face.Item1.Vertex], normals[face.Item1.Normal], colour, texs[face.Item1.Texcoord]);
+                Vertices[tempIndex++] = new ObjectVertex(
+                    verts[face.Item2.Vertex], normals[face.Item2.Normal], colour, texs[face.Item2.Texcoord]);
+                Vertices[tempIndex++] = new ObjectVertex(
+                    verts[face.Item3.Vertex], normals[face.Item3.Normal], colour, texs[face.Item3.Texcoord]);
             }
+        }
+
+        public Material CreateMaterial(string filename, string materialName)
+        {
+            // Create material from file if not already existing...
+            foreach (var mat in Material.LoadFromFile(filename))
+            {
+                if (!Material.Materials.ContainsKey(mat.Key))
+                {
+                    Material.Materials.Add(mat.Key, mat.Value);
+                }
+            }
+            // Load textures from material maps.
+            foreach (Material mat in Material.Materials.Values)
+            {
+                if (File.Exists(mat.AmbientMap) && !Textures.ContainsKey(mat.AmbientMap))
+                {
+                    Textures.Add(mat.AmbientMap, CreateTexture(mat.AmbientMap));
+                }
+                // Check if diffuse map exists, and is not loaded yet.
+                if (File.Exists(mat.DiffuseMap) && !Textures.ContainsKey(mat.DiffuseMap))
+                {
+                    Textures.Add(mat.DiffuseMap, CreateTexture(mat.DiffuseMap));
+                }
+                // Check if specular map exists, and is not loaded yet.
+                if (File.Exists(mat.SpecularMap) && !Textures.ContainsKey(mat.SpecularMap))
+                {
+                    Textures.Add(mat.SpecularMap, CreateTexture(mat.SpecularMap));
+                }
+                // Check if normal map exists, and is not loaded yet.
+                if (File.Exists(mat.NormalMap) && !Textures.ContainsKey(mat.NormalMap))
+                {
+                    Textures.Add(mat.NormalMap, CreateTexture(mat.NormalMap));
+                }
+                // Check if opacity map exists, and is not loaded yet.
+                if (File.Exists(mat.OpacityMap) && !Textures.ContainsKey(mat.OpacityMap))
+                {
+                    Textures.Add(mat.OpacityMap, CreateTexture(mat.OpacityMap));
+                }
+            }
+            // Return material from materialName
+            if (Material.Materials.ContainsKey(materialName))
+            {
+                return Material.Materials[materialName];
+            }
+            return null;
+        }
+
+        public override void Render()
+        {
+            throw new NotImplementedException();
         }
     }
 

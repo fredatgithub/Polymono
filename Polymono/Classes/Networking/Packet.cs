@@ -11,9 +11,9 @@ namespace Polymono.Classes.Networking {
         public const int TypeSize = 4;
         public const int TargetIDSize = 4;
         public const int TerminatorSize = 1;
-        public const int DataSize = 2039;
+        public const int DataSize = 1527;
         // Byte buffer size.
-        public const int BufferSize = 2048;
+        public const int BufferSize = 1536;
 
         public static Packet[] Create(PacketType type, int targetID, string data)
         {

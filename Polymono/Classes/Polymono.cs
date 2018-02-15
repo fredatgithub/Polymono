@@ -1,4 +1,5 @@
-﻿using Polymono.Classes.Networking;
+﻿using Polymono.Classes.Graphics;
+using Polymono.Classes.Networking;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -15,7 +16,7 @@ namespace Polymono.Classes {
         public const int MaxPlayers = 16;
 
         public static Dictionary<ConsoleLevel, bool> ConsoleLevels;
-        public static INetwork Network;
+        //public static INetwork Network;
 
         public static void Main()
         {

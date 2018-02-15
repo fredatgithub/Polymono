@@ -19,9 +19,14 @@ using System.Threading;
 using System.Threading.Tasks;
 
 namespace Polymono.Classes {
+    public enum ProgramID {
+        Default, Textured, Coloured, Full, Dice, Player
+    }
+
     class GameClient : GameWindow {
+        public static bool FatalError = false;
         // Programs
-        public Dictionary<ProgramIDs, ShaderProgram> Programs;
+        public Dictionary<ProgramID, ShaderProgram> Programs;
         // Models
         public Dictionary<int, AModel> Models;
         // Matrices
@@ -30,11 +35,10 @@ namespace Polymono.Classes {
         // Game objects
         public Camera Camera;
         public Board Board;
+        public Dice Dice;
         public Player Player;
-
-        public enum ProgramIDs {
-            Default, Textured, Coloured, Full, Player
-        }
+        // Light object
+        Light activeLight = new Light(Vector3.Zero, new Vector3(0.9f, 0.80f, 0.8f));
 
         public GameClient() : base(1280, 720, new GraphicsMode(32, 24, 0, 4))
         {
@@ -46,7 +50,7 @@ namespace Polymono.Classes {
             Polymono.Print($"Windows OS: {Environment.OSVersion}");
             Polymono.Print($"CLR version: {Environment.Version}");
 
-            Programs = new Dictionary<ProgramIDs, ShaderProgram>();
+            Programs = new Dictionary<ProgramID, ShaderProgram>();
             Models = new Dictionary<int, AModel>();
             Camera = new Camera();
         }
@@ -62,7 +66,9 @@ namespace Polymono.Classes {
                     switch (type)
                     {
                         case DebugType.DebugTypeError:
-                            Polymono.Debug($"OpenGL error.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
+                            Polymono.Error($"OpenGL error.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
+                            Polymono.ErrorF(source.ToString());
+                            FatalError = true;
                             break;
                         case DebugType.DebugTypeDeprecatedBehavior:
                         case DebugType.DebugTypeUndefinedBehavior:
@@ -74,16 +80,18 @@ namespace Polymono.Classes {
                         case DebugType.DebugTypePopGroup:
                         default:
                             Polymono.Debug($"OpenGL debug message.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
+                            Polymono.DebugF(source.ToString());
                             break;
                     }
                 }, (IntPtr)0);
 
             // Add shader programs.
-            Programs.Add(ProgramIDs.Default, new ShaderProgram("vs.glsl", "fs.glsl", "Default"));
-            Programs.Add(ProgramIDs.Textured, new ShaderProgram("vs_tex.glsl", "fs_tex.glsl", "Textured"));
-            Programs.Add(ProgramIDs.Coloured, new ShaderProgram("vs_col.glsl", "fs_col.glsl", "Coloured"));
-            Programs.Add(ProgramIDs.Full, new ShaderProgram("vs_full.glsl", "fs_full.glsl", "Full"));
-            Programs.Add(ProgramIDs.Player, new ShaderProgram("vs_player.glsl", "fs_player.glsl", "Player"));
+            Programs.Add(ProgramID.Default, new ShaderProgram("vs.glsl", "fs.glsl", "Default"));
+            Programs.Add(ProgramID.Textured, new ShaderProgram("vs_tex.glsl", "fs_tex.glsl", "Textured"));
+            Programs.Add(ProgramID.Coloured, new ShaderProgram("vs_col.glsl", "fs_col.glsl", "Coloured"));
+            Programs.Add(ProgramID.Full, new ShaderProgram("vs_full.glsl", "fs_full.glsl", "Full"));
+            Programs.Add(ProgramID.Dice, new ShaderProgram("vs_dice.glsl", "fs_dice.glsl", "Dice"));
+            Programs.Add(ProgramID.Player, new ShaderProgram("vs_player.glsl", "fs_player.glsl", "Player"));
 
             // Set vertices.
             List<Vertex> vertices = new List<Vertex> {
@@ -106,23 +114,56 @@ namespace Polymono.Classes {
                 Matrix4.CreateScale(5.0f);
 
             Board = new Board() {
-                Model = new Model(vertices, indices, modelMatrix, @"Resources\Textures\polymono.png")
+                Model = new Model(vertices, indices, modelMatrix,
+                @"Resources\Textures\polymono.png")
             };
 
+            modelMatrix =
+                Matrix4.CreateTranslation(2.0f, 1.0f, 0.0f) *
+                Matrix4.CreateRotationZ(0.0f) *
+                Matrix4.CreateRotationY(0.0f) *
+                Matrix4.CreateRotationX(0.0f) *
+                Matrix4.CreateScale(0.05f);
+
+            Dice = new Dice() {
+                Model = new ModelObject(@"Resources\Objects\cube.obj", modelMatrix,
+                @"Resources\Textures\cube_textured_uv.png",
+                @"Resources\Objects\cube.mtl",
+                @"Material")
+            };
+
+            modelMatrix =
+                Matrix4.CreateTranslation(0.0f, 0.0f, 0.0f) *
+                Matrix4.CreateRotationZ(0.0f) *
+                Matrix4.CreateRotationY(0.0f) *
+                Matrix4.CreateRotationX(0.0f) *
+                Matrix4.CreateScale(0.25f);
+
             Player = new Player() {
-                Model = new ModelObject(@"Resources\Objects\player.obj", Color4.Aqua)
+                Model = new ModelObject(@"Resources\Objects\player.obj", Color4.Aqua, modelMatrix,
+                @"Resources\Objects\player.mtl",
+                @"b0b0b0")
             };
 
             Board.Model.CreateBuffer();
+            Dice.Model.CreateBuffer();
             Player.Model.CreateBuffer();
 
             Models.Add(Board.Model.ID, Board.Model);
+            Models.Add(Dice.Model.ID, Dice.Model);
             Models.Add(Player.Model.ID, Player.Model);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             Title = $"Polymono | FPS: {1f / RenderPeriod:0} | TPS: {1f / UpdatePeriod:0}";
+
+            if (FatalError)
+            {
+                Console.WriteLine("Error occurred. Press ANY key to continue.");
+                Console.ReadLine();
+                FatalError = false;
+            }
 
             UpdateInput(e.Time);
             UpdateCamera();
@@ -140,15 +181,24 @@ namespace Polymono.Classes {
             GL.ClearColor(Color.LightCyan);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
 
-            Programs[ProgramIDs.Full].UseProgram();
+            Programs[ProgramID.Full].UseProgram();
             GL.UniformMatrix4(18, false, ref ProjectionMatrix);
             GL.UniformMatrix4(17, false, ref ViewMatrix);
             Board.Model.Render();
 
-            Programs[ProgramIDs.Player].UseProgram();
+            Programs[ProgramID.Dice].UseProgram();
+            GL.Uniform3(12, ref activeLight.Position);
+            GL.Uniform3(13, ref activeLight.Color);
+            GL.Uniform1(14, activeLight.DiffuseIntensity);
+            GL.Uniform1(15, activeLight.AmbientIntensity);
             GL.UniformMatrix4(18, false, ref ProjectionMatrix);
             GL.UniformMatrix4(17, false, ref ViewMatrix);
-            Player.Model.Render();
+            Dice.Model.RenderObject(ProgramID.Dice);
+
+            Programs[ProgramID.Player].UseProgram();
+            GL.UniformMatrix4(18, false, ref ProjectionMatrix);
+            GL.UniformMatrix4(17, false, ref ViewMatrix);
+            Player.Model.RenderObject(ProgramID.Player);
 
             SwapBuffers();
         }

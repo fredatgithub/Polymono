@@ -5,13 +5,10 @@ using System.Text;
 using System.Threading.Tasks;
 
 namespace Polymono.Classes.Game {
-    class Player : GameObject {
-        public static int TOTAL_PLAYER_IDS = 0;
-        public int PlayerID;
-
-        public Player()
+    class Dice : GameObject {
+        public Dice()
         {
-            PlayerID = TOTAL_PLAYER_IDS++;
+
         }
     }
 }

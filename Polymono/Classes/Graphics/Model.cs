@@ -10,11 +10,6 @@ using System.Threading.Tasks;
 
 namespace Polymono.Classes.Graphics {
     class Model : AModel {
-        // Buffer references
-        public int VBO;
-        public int VAO;
-        public int IBO;
-        public int TextureID;
         // Vertex data
         public Vertex[] Vertices;
         public int[] Indices;
@@ -83,37 +78,6 @@ namespace Polymono.Classes.Graphics {
             GL.DeleteBuffer(VBO);
             GL.DeleteBuffer(IBO);
             GL.DeleteTexture(TextureID);
-        }
-
-        private int CreateTexture(string filename)
-        {
-            int width, height;
-            float[] data;
-            using (var bmp = (Bitmap)Image.FromFile(filename))
-            {
-                width = bmp.Width;
-                height = bmp.Height;
-                data = new float[width * height * 4];
-                int index = 0;
-                for (int y = 0; y < height; y++)
-                {
-                    for (int x = 0; x < width; x++)
-                    {
-                        var pixel = bmp.GetPixel(x, y);
-                        data[index++] = pixel.R / 255f;
-                        data[index++] = pixel.G / 255f;
-                        data[index++] = pixel.B / 255f;
-                        data[index++] = pixel.A / 255f;
-                    }
-                }
-            }
-            GL.CreateTextures(TextureTarget.Texture2D, 1, out int texture);
-            GL.TextureStorage2D(texture, 1, SizedInternalFormat.Rgba32f, width, height);
-            GL.BindTexture(TextureTarget.Texture2D, texture);
-            GL.TextureSubImage2D(texture, 0, 0, 0, width, height, OpenTK.Graphics.OpenGL4.PixelFormat.Rgba,
-                PixelType.Float, data);
-            GL.BindTexture(TextureTarget.Texture2D, 0);
-            return texture;
         }
     }
 }

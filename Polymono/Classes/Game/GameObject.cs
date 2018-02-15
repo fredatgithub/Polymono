@@ -7,11 +7,14 @@ using System.Threading.Tasks;
 
 namespace Polymono.Classes.Game {
     class GameObject {
+        public static int TOTAL_IDS = 0;
+        public int ID;
+        // Modelling
         public AModel Model;
 
         public GameObject()
         {
-
+            ID = TOTAL_IDS++;
         }
     }
 }
