@@ -1,5 +1,5 @@
-﻿using Polymono.Classes.Graphics;
-using Polymono.Classes.Networking;
+﻿using Polymono.Graphics;
+using Polymono.Networking;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -7,7 +7,7 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes {
+namespace Polymono {
     public enum ConsoleLevel {
         Debug, Normal, Warning, Error
     }

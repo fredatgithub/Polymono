@@ -1,13 +1,13 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
-using Polymono.Classes.Vertices;
+using Polymono.Vertices;
 using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Polymono.Classes.Graphics {
+namespace Polymono.Graphics {
     class ModelObject : AModel {
         // Vertex data
         public List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>> Faces;

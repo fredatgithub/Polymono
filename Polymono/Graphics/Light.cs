@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Graphics {
+namespace Polymono.Graphics {
     class Light {
         public Vector3 Position;
         public Vector3 Color = new Vector3();

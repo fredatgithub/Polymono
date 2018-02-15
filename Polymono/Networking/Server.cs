@@ -7,7 +7,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Networking {
+namespace Polymono.Networking {
     class Server : AServer {
         public Server()
         {

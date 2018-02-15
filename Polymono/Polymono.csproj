@@ -35,7 +35,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Polymono.Classes.Polymono</StartupObject>
+    <StartupObject>Polymono.Polymono</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="BulletSharp, Version=0.10.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -55,28 +55,28 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
-    <Compile Include="Classes\Game\Dice.cs" />
-    <Compile Include="Classes\Game\GameObject.cs" />
-    <Compile Include="Classes\Graphics\Camera.cs" />
-    <Compile Include="Classes\GameClient.cs" />
-    <Compile Include="Classes\Graphics\AModel.cs" />
-    <Compile Include="Classes\Graphics\Light.cs" />
-    <Compile Include="Classes\Graphics\Material.cs" />
-    <Compile Include="Classes\Graphics\Model.cs" />
-    <Compile Include="Classes\Graphics\ModelObject.cs" />
-    <Compile Include="Classes\Networking\AClient.cs" />
-    <Compile Include="Classes\Networking\AServer.cs" />
-    <Compile Include="Classes\Networking\Client.cs" />
-    <Compile Include="Classes\Networking\INetwork.cs" />
-    <Compile Include="Classes\Networking\Packet.cs" />
-    <Compile Include="Classes\Networking\Server.cs" />
-    <Compile Include="Classes\Networking\SocketState.cs" />
-    <Compile Include="Classes\Polymono.cs" />
-    <Compile Include="Classes\Game\Board.cs" />
-    <Compile Include="Classes\Game\Player.cs" />
-    <Compile Include="Classes\Game\Property.cs" />
-    <Compile Include="Classes\Graphics\ShaderProgram.cs" />
-    <Compile Include="Classes\Vertices\Vertex.cs" />
+    <Compile Include="Game\Dice.cs" />
+    <Compile Include="Game\GameObject.cs" />
+    <Compile Include="Graphics\Camera.cs" />
+    <Compile Include="GameClient.cs" />
+    <Compile Include="Graphics\AModel.cs" />
+    <Compile Include="Graphics\Light.cs" />
+    <Compile Include="Graphics\Material.cs" />
+    <Compile Include="Graphics\Model.cs" />
+    <Compile Include="Graphics\ModelObject.cs" />
+    <Compile Include="Networking\AClient.cs" />
+    <Compile Include="Networking\AServer.cs" />
+    <Compile Include="Networking\Client.cs" />
+    <Compile Include="Networking\INetwork.cs" />
+    <Compile Include="Networking\Packet.cs" />
+    <Compile Include="Networking\Server.cs" />
+    <Compile Include="Networking\SocketState.cs" />
+    <Compile Include="Polymono.cs" />
+    <Compile Include="Game\Board.cs" />
+    <Compile Include="Game\Player.cs" />
+    <Compile Include="Game\Property.cs" />
+    <Compile Include="Graphics\ShaderProgram.cs" />
+    <Compile Include="Vertices\Vertex.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Content Include="Resources\Textures\cubedie.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

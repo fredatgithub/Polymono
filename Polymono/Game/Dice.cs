@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Game {
+namespace Polymono.Game {
     class Dice : GameObject {
         public Dice()
         {

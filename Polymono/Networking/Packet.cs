@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Networking {
+namespace Polymono.Networking {
     class PacketHandler {
         // Data buffer sizes.
         public const int TypeSize = 4;

@@ -1,7 +1,7 @@
 ﻿using OpenTK;
 using System;
 
-namespace Polymono.Classes.Graphics {
+namespace Polymono.Graphics {
     public enum CameraMovement {
         Forward, Backward, Left, Right, Up, Down
     }

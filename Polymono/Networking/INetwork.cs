@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Networking {
+namespace Polymono.Networking {
     interface INetwork {
         void Send(params Packet[] packets);
 

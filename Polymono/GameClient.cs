@@ -2,10 +2,10 @@
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
-using Polymono.Classes.Game;
-using Polymono.Classes.Graphics;
-using Polymono.Classes.Networking;
-using Polymono.Classes.Vertices;
+using Polymono.Game;
+using Polymono.Graphics;
+using Polymono.Networking;
+using Polymono.Vertices;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -18,7 +18,7 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes {
+namespace Polymono {
     public enum ProgramID {
         Default, Textured, Coloured, Full, Dice, Player
     }

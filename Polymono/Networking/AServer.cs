@@ -5,7 +5,7 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Networking {
+namespace Polymono.Networking {
     abstract class AServer : INetwork {
         public Socket LocalSocket;
         public Dictionary<int, SocketState> ConnectedUsers;

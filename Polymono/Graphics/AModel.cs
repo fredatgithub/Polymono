@@ -4,7 +4,7 @@ using System;
 using System.Drawing;
 using System.IO;
 
-namespace Polymono.Classes.Graphics {
+namespace Polymono.Graphics {
     abstract class AModel {
         // Identification
         public static int TOTAL_IDS = 0;

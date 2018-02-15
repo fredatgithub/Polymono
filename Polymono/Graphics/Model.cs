@@ -1,6 +1,6 @@
 ﻿using OpenTK;
 using OpenTK.Graphics.OpenGL4;
-using Polymono.Classes.Vertices;
+using Polymono.Vertices;
 using System;
 using System.Collections.Generic;
 using System.Drawing;
@@ -8,7 +8,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Graphics {
+namespace Polymono.Graphics {
     class Model : AModel {
         // Vertex data
         public Vertex[] Vertices;

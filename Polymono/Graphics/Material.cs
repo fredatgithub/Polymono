@@ -6,7 +6,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Graphics {
+namespace Polymono.Graphics {
     class Material {
         public static Dictionary<string, Material> Materials = new Dictionary<string, Material>();
 

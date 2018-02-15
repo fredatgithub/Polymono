@@ -1,13 +1,13 @@
 ﻿using OpenTK;
-using Polymono.Classes.Graphics;
-using Polymono.Classes.Vertices;
+using Polymono.Graphics;
+using Polymono.Vertices;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Classes.Game {
+namespace Polymono.Game {
     class Board : GameObject {
         public Property[] Property;
 

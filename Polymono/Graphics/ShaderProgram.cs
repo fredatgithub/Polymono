@@ -2,7 +2,7 @@
 using System;
 using System.IO;
 
-namespace Polymono.Classes.Graphics {
+namespace Polymono.Graphics {
     class ShaderProgram {
         public int ProgramID;
         public int VertexShader;
