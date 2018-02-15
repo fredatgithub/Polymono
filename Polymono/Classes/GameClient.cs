@@ -114,33 +114,22 @@ namespace Polymono.Classes {
                 Matrix4.CreateScale(5.0f);
 
             Board = new Board() {
-                Model = new Model(vertices, indices, modelMatrix,
+                Model = new Model(vertices, indices, 
+                Vector3.Zero, new Vector3(ToRadians(-90.0f), 0.0f, 0.0f), new Vector3(5.0f),
                 @"Resources\Textures\polymono.png")
             };
 
-            modelMatrix =
-                Matrix4.CreateTranslation(2.0f, 1.0f, 0.0f) *
-                Matrix4.CreateRotationZ(0.0f) *
-                Matrix4.CreateRotationY(0.0f) *
-                Matrix4.CreateRotationX(0.0f) *
-                Matrix4.CreateScale(0.05f);
-
             Dice = new Dice() {
-                Model = new ModelObject(@"Resources\Objects\cube.obj", modelMatrix,
+                Model = new ModelObject(@"Resources\Objects\cube.obj", 
+                new Vector3(2.0f, 1.0f, 0.0f), Vector3.Zero, new Vector3(0.05f, 0.05f, 0.05f),
                 @"Resources\Textures\cube_textured_uv.png",
                 @"Resources\Objects\cube.mtl",
                 @"Material")
             };
 
-            modelMatrix =
-                Matrix4.CreateTranslation(0.0f, 0.0f, 0.0f) *
-                Matrix4.CreateRotationZ(0.0f) *
-                Matrix4.CreateRotationY(0.0f) *
-                Matrix4.CreateRotationX(0.0f) *
-                Matrix4.CreateScale(0.25f);
-
             Player = new Player() {
-                Model = new ModelObject(@"Resources\Objects\player.obj", Color4.Aqua, modelMatrix,
+                Model = new ModelObject(@"Resources\Objects\player.obj", Color4.Aqua,
+                new Vector3(0.0f, 0.0f, 0.0f), Vector3.Zero, new Vector3(0.25f, 0.25f, 0.25f),
                 @"Resources\Objects\player.mtl",
                 @"b0b0b0")
             };
@@ -167,6 +156,14 @@ namespace Polymono.Classes {
 
             UpdateInput(e.Time);
             UpdateCamera();
+
+            Random random = new Random();
+            Models[Dice.Model.ID].Rotate(new Vector3(0.001f, 0.0f, 0.0f));
+            Polymono.DebugF($"{Models[Dice.Model.ID].Rotation}");
+            foreach (var model in Models.Values)
+            {
+                model.UpdateModelMatrix();
+            }
 
             ViewMatrix = Camera.GetViewMatrix();
             ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(

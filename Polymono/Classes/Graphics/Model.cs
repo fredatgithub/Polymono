@@ -13,20 +13,20 @@ namespace Polymono.Classes.Graphics {
         // Vertex data
         public Vertex[] Vertices;
         public int[] Indices;
-        // Matrices
-        public Matrix4 ModelMatrix;
 
-        public Model() : this(new List<Vertex>(), new int[] { 0, 1, 2 }, Matrix4.Identity)
+        public Model() : this(new List<Vertex>(), new int[] { 0, 1, 2 }, 
+            Vector3.Zero, Vector3.Zero, Vector3.One)
         {
 
         }
 
-        public Model(List<Vertex> vertices, int[] indices, Matrix4 modelMatrix, string textureLocation = @"Resources\Textures\opentksquare.png")
-            : base()
+        public Model(List<Vertex> vertices, int[] indices,
+            Vector3 position, Vector3 rotation, Vector3 scaling, 
+            string textureLocation = @"Resources\Textures\opentksquare.png")
+            : base(position, rotation, scaling)
         {
             Vertices = vertices.ToArray();
             Indices = indices;
-            ModelMatrix = modelMatrix;
             TextureID = CreateTexture(textureLocation);
         }
 

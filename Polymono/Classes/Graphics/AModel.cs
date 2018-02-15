@@ -1,4 +1,5 @@
-﻿using OpenTK.Graphics.OpenGL4;
+﻿using OpenTK;
+using OpenTK.Graphics.OpenGL4;
 using System;
 using System.Drawing;
 using System.IO;
@@ -16,19 +17,36 @@ namespace Polymono.Classes.Graphics {
         // Texture data
         public float[] TexData;
         public int Width, Height, OffWidth, OffHeight;
+        // Matrices
+        public Matrix4 ModelMatrix;
+        // Spatial data
+        public Vector3 Position = Vector3.Zero;
+        public Vector3 Rotation = Vector3.Zero;
+        public Vector3 Scaling = Vector3.One;
 
-        public AModel()
+        public AModel() : this(Vector3.Zero, Vector3.Zero, Vector3.One)
+        {
+            
+        }
+
+        public AModel(Vector3 position, Vector3 rotation, Vector3 scaling)
         {
             ID = TOTAL_IDS++;
+            Position = position;
+            Rotation = rotation;
+            Scaling = scaling;
         }
 
         public abstract void CreateBuffer();
 
-        public abstract void Render();
+        public virtual void Render()
+        {
+            Polymono.Debug($"Render methods don't exist for ID: {ID}");
+        }
 
         public virtual void RenderObject(ProgramID id)
         {
-
+            Render();
         }
 
         public abstract void Delete();
@@ -188,6 +206,31 @@ namespace Polymono.Classes.Graphics {
             GL.BindTexture(TextureTarget.Texture2D, 0);
 
             return texture;
+        }
+
+        public void Translate(Vector3 translation)
+        {
+            Position += translation;
+        }
+
+        public void Rotate(Vector3 rotation)
+        {
+            Rotation += rotation;
+        }
+
+        public void Scale(Vector3 scaling)
+        {
+            Scaling += scaling;
+        }
+
+        public void UpdateModelMatrix()
+        {
+            ModelMatrix = 
+                Matrix4.CreateRotationX(Rotation.X) *
+                Matrix4.CreateRotationY(Rotation.Y) *
+                Matrix4.CreateRotationZ(Rotation.Z) *
+                Matrix4.CreateTranslation(Position) *
+                Matrix4.CreateScale(Scaling);
         }
     }
 }

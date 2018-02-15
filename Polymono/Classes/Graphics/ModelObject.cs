@@ -12,8 +12,6 @@ namespace Polymono.Classes.Graphics {
         // Vertex data
         public List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>> Faces;
         public ObjectVertex[] Vertices;
-        // Matrices
-        public Matrix4 ModelMatrix;
         // Materials
         public Material Material;
         // Textures
@@ -23,29 +21,30 @@ namespace Polymono.Classes.Graphics {
             string textureLocation = @"Resources\Textures\opentksquare.png", 
             string materialLocation = @"Resources\Objects\opentksquare.mtl",
             string materialName = @"opentk1") :
-            this(filename, Color4.White, Matrix4.Identity, textureLocation, materialLocation, materialName)
+            this(filename, Color4.White, Vector3.Zero, Vector3.Zero, Vector3.One, textureLocation, materialLocation, materialName)
         {
 
         }
 
-        public ModelObject(string filename, Matrix4 modelMatrix, 
+        public ModelObject(string filename, 
+            Vector3 position, Vector3 rotation, Vector3 scaling, 
             string textureLocation = @"Resources\Textures\opentksquare.png", 
             string materialLocation = @"Resources\Objects\opentksquare.mtl",
             string materialName = @"opentk1") :
-            this(filename, Color4.White, modelMatrix, textureLocation, materialLocation, materialName)
+            this(filename, Color4.White, position, rotation, scaling, textureLocation, materialLocation, materialName)
         {
 
         }
 
-        public ModelObject(string filename, Color4 colour, Matrix4 modelMatrix, 
+        public ModelObject(string filename, Color4 colour, 
+            Vector3 position, Vector3 rotation, Vector3 scaling, 
             string textureLocation = @"Resources\Textures\opentksquare.png", 
             string materialLocation = @"Resources\Objects\opentksquare.mtl",
             string materialName = @"opentk1") :
-            base()
+            base(position, rotation, scaling)
         {
             Faces = new List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>>();
             Vertices = new ObjectVertex[0];
-            ModelMatrix = modelMatrix;
             Textures = new Dictionary<string, int>();
             LoadFromFile(filename, colour);
             // Load materials.
@@ -54,13 +53,14 @@ namespace Polymono.Classes.Graphics {
             TextureID = CreateTexture(textureLocation);
         }
 
-        public ModelObject(string filename, Color4 colour, Matrix4 modelMatrix, 
+        public ModelObject(string filename, Color4 colour, 
+            Vector3 position, Vector3 rotation, Vector3 scaling, 
             string materialLocation = @"Resources\Objects\opentksquare.mtl",
-            string materialName = @"opentk1")
+            string materialName = @"opentk1") :
+            base(position, rotation, scaling)
         {
             Faces = new List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>>();
             Vertices = new ObjectVertex[0];
-            ModelMatrix = modelMatrix;
             Textures = new Dictionary<string, int>();
             LoadFromFile(filename, colour);
             // Load materials.
