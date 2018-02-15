@@ -25,6 +25,7 @@ namespace Polymono.Classes {
 
     class GameClient : GameWindow {
         public static bool FatalError = false;
+        public static bool StopForErrors = true;
         // Programs
         public Dictionary<ProgramID, ShaderProgram> Programs;
         // Models
@@ -106,32 +107,25 @@ namespace Polymono.Classes {
                 2, 3, 1
             };
 
-            Matrix4 modelMatrix =
-                Matrix4.CreateTranslation(0.0f, 0.0f, 0.0f) *
-                Matrix4.CreateRotationZ(0.0f) *
-                Matrix4.CreateRotationY(0.0f) *
-                Matrix4.CreateRotationX(ToRadians(-90.0f)) *
-                Matrix4.CreateScale(5.0f);
-
             Board = new Board() {
-                Model = new Model(vertices, indices, 
-                Vector3.Zero, new Vector3(ToRadians(-90.0f), 0.0f, 0.0f), new Vector3(5.0f),
-                @"Resources\Textures\polymono.png")
+                Model = new Model(vertices, indices,
+                    Vector3.Zero, new Vector3(ToRadians(-90.0f), 0.0f, 0.0f), new Vector3(5.0f),
+                    @"Resources\Textures\polymono.png")
             };
 
             Dice = new Dice() {
-                Model = new ModelObject(@"Resources\Objects\cube.obj", 
-                new Vector3(2.0f, 1.0f, 0.0f), Vector3.Zero, new Vector3(0.05f, 0.05f, 0.05f),
-                @"Resources\Textures\cube_textured_uv.png",
-                @"Resources\Objects\cube.mtl",
-                @"Material")
+                Model = new ModelObject(@"Resources\Objects\cube.obj",
+                    new Vector3(2.0f, 1.0f, 0.0f), Vector3.Zero, new Vector3(0.05f, 0.05f, 0.05f),
+                    @"Resources\Textures\cube_textured_uv.png",
+                    @"Resources\Objects\cube.mtl",
+                    @"Material")
             };
 
             Player = new Player() {
                 Model = new ModelObject(@"Resources\Objects\player.obj", Color4.Aqua,
-                new Vector3(0.0f, 0.0f, 0.0f), Vector3.Zero, new Vector3(0.25f, 0.25f, 0.25f),
-                @"Resources\Objects\player.mtl",
-                @"b0b0b0")
+                    new Vector3(0.0f, 0.0f, 0.0f), Vector3.Zero, new Vector3(0.25f, 0.25f, 0.25f),
+                    @"Resources\Objects\player.mtl",
+                    @"b0b0b0")
             };
 
             Board.Model.CreateBuffer();
@@ -146,25 +140,27 @@ namespace Polymono.Classes {
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
             Title = $"Polymono | FPS: {1f / RenderPeriod:0} | TPS: {1f / UpdatePeriod:0}";
-
-            if (FatalError)
+            // Error handling.
+            if (FatalError && StopForErrors)
             {
-                Console.WriteLine("Error occurred. Press ANY key to continue.");
+                Console.WriteLine("Error occurred. Press ANY key to continue trying to run program.");
                 Console.ReadLine();
                 FatalError = false;
+                StopForErrors = false;
             }
-
+            // Update inputs and 
             UpdateInput(e.Time);
             UpdateCamera();
 
             Random random = new Random();
             Models[Dice.Model.ID].Rotate(new Vector3(0.001f, 0.0f, 0.0f));
             Polymono.DebugF($"{Models[Dice.Model.ID].Rotation}");
+
+            // Update matrices.
             foreach (var model in Models.Values)
             {
                 model.UpdateModelMatrix();
             }
-
             ViewMatrix = Camera.GetViewMatrix();
             ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(
                 ToRadians(Camera.Zoom),
@@ -177,12 +173,12 @@ namespace Polymono.Classes {
         {
             GL.ClearColor(Color.LightCyan);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-
+            // Basic renderer
             Programs[ProgramID.Full].UseProgram();
             GL.UniformMatrix4(18, false, ref ProjectionMatrix);
             GL.UniformMatrix4(17, false, ref ViewMatrix);
             Board.Model.Render();
-
+            // Dice renderer
             Programs[ProgramID.Dice].UseProgram();
             GL.Uniform3(12, ref activeLight.Position);
             GL.Uniform3(13, ref activeLight.Color);
@@ -191,7 +187,7 @@ namespace Polymono.Classes {
             GL.UniformMatrix4(18, false, ref ProjectionMatrix);
             GL.UniformMatrix4(17, false, ref ViewMatrix);
             Dice.Model.RenderObject(ProgramID.Dice);
-
+            // Player renderer
             Programs[ProgramID.Player].UseProgram();
             GL.UniformMatrix4(18, false, ref ProjectionMatrix);
             GL.UniformMatrix4(17, false, ref ViewMatrix);
@@ -242,22 +238,61 @@ namespace Polymono.Classes {
             {
                 KeyboardState keyState = Keyboard.GetState();
                 float deltaTimef = (float)deltaTime;
-
+                // Camera manipulation.
                 if (keyState.IsKeyDown(Key.W))
                 {
-                    Camera.ProcessKeyboard(CameraMovement.FORWARD, deltaTimef);
+                    Camera.ProcessKeyboard(CameraMovement.Forward, deltaTimef);
                 }
                 if (keyState.IsKeyDown(Key.S))
                 {
-                    Camera.ProcessKeyboard(CameraMovement.BACKWARD, deltaTimef);
+                    Camera.ProcessKeyboard(CameraMovement.Backward, deltaTimef);
                 }
                 if (keyState.IsKeyDown(Key.A))
                 {
-                    Camera.ProcessKeyboard(CameraMovement.LEFT, deltaTimef);
+                    Camera.ProcessKeyboard(CameraMovement.Left, deltaTimef);
                 }
                 if (keyState.IsKeyDown(Key.D))
                 {
-                    Camera.ProcessKeyboard(CameraMovement.RIGHT, deltaTimef);
+                    Camera.ProcessKeyboard(CameraMovement.Right, deltaTimef);
+                }
+                if (keyState.IsKeyDown(Key.E))
+                {
+                    Camera.ProcessKeyboard(CameraMovement.Up, deltaTimef);
+                }
+                if (keyState.IsKeyDown(Key.Q))
+                {
+                    Camera.ProcessKeyboard(CameraMovement.Down, deltaTimef);
+                }
+                // Object manipulation.
+                if (keyState.IsKeyDown(Key.Keypad8))
+                {
+                    // Move object forward (Z)
+                    Models[Dice.Model.ID].Translate(new Vector3(0.0f, 0.0f, 0.05f));
+                }
+                if (keyState.IsKeyDown(Key.Keypad2))
+                {
+                    // Move object backward (Z)
+                    Models[Dice.Model.ID].Translate(new Vector3(0.0f, 0.0f, -0.05f));
+                }
+                if (keyState.IsKeyDown(Key.Keypad4))
+                {
+                    // Move object left (X)
+                    Models[Dice.Model.ID].Translate(new Vector3(0.05f, 0.0f, 0.0f));
+                }
+                if (keyState.IsKeyDown(Key.Keypad6))
+                {
+                    // Move object right (X)
+                    Models[Dice.Model.ID].Translate(new Vector3(-0.05f, 0.0f, 0.0f));
+                }
+                if (keyState.IsKeyDown(Key.Keypad9))
+                {
+                    // Move object up (Y)
+                    Models[Dice.Model.ID].Translate(new Vector3(0.0f, 0.05f, 0.0f));
+                }
+                if (keyState.IsKeyDown(Key.Keypad7))
+                {
+                    // Move object Down (Y)
+                    Models[Dice.Model.ID].Translate(new Vector3(0.0f, -0.05f, 0.0f));
                 }
                 if (keyState.IsKeyDown(Key.Escape))
                 {

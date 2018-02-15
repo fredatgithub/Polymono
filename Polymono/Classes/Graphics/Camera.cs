@@ -3,7 +3,7 @@ using System;
 
 namespace Polymono.Classes.Graphics {
     public enum CameraMovement {
-        FORWARD, BACKWARD, LEFT, RIGHT
+        Forward, Backward, Left, Right, Up, Down
     }
 
     class Camera {
@@ -29,14 +29,18 @@ namespace Polymono.Classes.Graphics {
         public void ProcessKeyboard(CameraMovement direction, float deltaTime)
         {
             float velocity = MovementSpeed * deltaTime;
-            if (direction == CameraMovement.FORWARD)
+            if (direction == CameraMovement.Forward)
                 Position += Front * velocity;
-            if (direction == CameraMovement.BACKWARD)
+            if (direction == CameraMovement.Backward)
                 Position -= Front * velocity;
-            if (direction == CameraMovement.LEFT)
+            if (direction == CameraMovement.Left)
                 Position -= Right * velocity;
-            if (direction == CameraMovement.RIGHT)
+            if (direction == CameraMovement.Right)
                 Position += Right * velocity;
+            if (direction == CameraMovement.Up)
+                Position += Up * velocity;
+            if (direction == CameraMovement.Down)
+                Position -= Up * velocity;
         }
 
         public void ProcessMouseMovement(float xoffset, float yoffset, bool constrainPitch = true)
