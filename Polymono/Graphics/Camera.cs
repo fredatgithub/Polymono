@@ -26,6 +26,11 @@ namespace Polymono.Graphics {
             return Matrix4.LookAt(Position, Position + Front, Up);
         }
 
+        public Matrix4 GetStaticViewMatrix()
+        {
+            return Matrix4.LookAt(Vector3.Zero, Vector3.Zero + Front, Up);
+        }
+
         public void ProcessKeyboard(CameraMovement direction, float deltaTime)
         {
             float velocity = MovementSpeed * deltaTime;

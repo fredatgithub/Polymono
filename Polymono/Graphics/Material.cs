@@ -70,14 +70,18 @@ namespace Polymono.Graphics {
                 {
                     Material newMat = new Material();
                     newMat = LoadFromString(currentmat, out string newMatName);
-                    Materials.Add(newMatName, newMat);
+                    if (!Materials.ContainsKey(newMatName))
+                    {
+                        Materials.Add(newMatName, newMat);
+                    }
                 }
             } catch (FileNotFoundException)
             {
                 Console.WriteLine("File not found: {0}", filename);
-            } catch (Exception)
+            } catch (Exception e)
             {
                 Console.WriteLine("Error loading file: {0}", filename);
+                Console.WriteLine("Error: {0}", e);
             }
             return Materials;
         }

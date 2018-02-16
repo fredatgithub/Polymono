@@ -1,5 +1,7 @@
 ﻿<?xml version="1.0" encoding="utf-8"?>
 <Project ToolsVersion="15.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <Import Project="..\packages\SharpFont.4.0.1\build\SharpFont.props" Condition="Exists('..\packages\SharpFont.4.0.1\build\SharpFont.props')" />
+  <Import Project="..\packages\SharpFont.Dependencies.2.6\build\SharpFont.Dependencies.props" Condition="Exists('..\packages\SharpFont.Dependencies.2.6\build\SharpFont.Dependencies.props')" />
   <Import Project="$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props" Condition="Exists('$(MSBuildExtensionsPath)\$(MSBuildToolsVersion)\Microsoft.Common.props')" />
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
@@ -59,11 +61,14 @@
     <Prefer32Bit>true</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="BulletSharp, Version=0.10.0.0, Culture=neutral, processorArchitecture=MSIL">
-      <HintPath>..\packages\BulletSharp.0.10\lib\net40-client\BulletSharp.dll</HintPath>
-    </Reference>
     <Reference Include="OpenTK, Version=2.0.0.0, Culture=neutral, PublicKeyToken=bad199fe84eb3df4, processorArchitecture=MSIL">
       <HintPath>..\packages\OpenTK.2.0.0\lib\net20\OpenTK.dll</HintPath>
+    </Reference>
+    <Reference Include="QuickFont, Version=4.4.6159.26433, Culture=neutral, processorArchitecture=MSIL">
+      <HintPath>..\packages\QuickFont.Desktop.4.4.6159.26433\lib\net45\QuickFont.dll</HintPath>
+    </Reference>
+    <Reference Include="SharpFont, Version=4.0.1.200, Culture=neutral, PublicKeyToken=48add4c483071cdf, processorArchitecture=MSIL">
+      <HintPath>..\packages\SharpFont.4.0.1\lib\net45\SharpFont.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.Core" />
@@ -78,6 +83,7 @@
   <ItemGroup>
     <Compile Include="Game\Dice.cs" />
     <Compile Include="Game\GameObject.cs" />
+    <Compile Include="Game\GameState.cs" />
     <Compile Include="Graphics\Camera.cs" />
     <Compile Include="GameClient.cs" />
     <Compile Include="Graphics\AModel.cs" />
@@ -85,6 +91,7 @@
     <Compile Include="Graphics\Material.cs" />
     <Compile Include="Graphics\Model.cs" />
     <Compile Include="Graphics\ModelObject.cs" />
+    <Compile Include="Graphics\Skybox.cs" />
     <Compile Include="Networking\AClient.cs" />
     <Compile Include="Networking\AServer.cs" />
     <Compile Include="Networking\Client.cs" />
@@ -174,15 +181,25 @@
     <Content Include="Resources\Objects\opentk.mtl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="OpenTK.dll.config" />
     <None Include="packages.config" />
+    <Content Include="Resources\Objects\sphere.obj">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Graphics\vs_skybox.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Graphics\fs_skybox.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
   </ItemGroup>
   <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
-  <Import Project="..\packages\BulletSharp.0.10\build\net40-client\BulletSharp.targets" Condition="Exists('..\packages\BulletSharp.0.10\build\net40-client\BulletSharp.targets')" />
   <Target Name="EnsureNuGetPackageBuildImports" BeforeTargets="PrepareForBuild">
     <PropertyGroup>
       <ErrorText>This project references NuGet package(s) that are missing on this computer. Use NuGet Package Restore to download them.  For more information, see http://go.microsoft.com/fwlink/?LinkID=322105. The missing file is {0}.</ErrorText>
     </PropertyGroup>
-    <Error Condition="!Exists('..\packages\BulletSharp.0.10\build\net40-client\BulletSharp.targets')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\BulletSharp.0.10\build\net40-client\BulletSharp.targets'))" />
+    <Error Condition="!Exists('..\packages\SharpFont.Dependencies.2.6\build\SharpFont.Dependencies.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SharpFont.Dependencies.2.6\build\SharpFont.Dependencies.props'))" />
+    <Error Condition="!Exists('..\packages\SharpFont.4.0.1\build\SharpFont.props')" Text="$([System.String]::Format('$(ErrorText)', '..\packages\SharpFont.4.0.1\build\SharpFont.props'))" />
   </Target>
 </Project>

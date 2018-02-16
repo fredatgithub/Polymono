@@ -13,7 +13,7 @@ namespace Polymono {
     }
 
     class Polymono {
-        public const int MaxPlayers = 16;
+        public const int MaxPlayers = 8;
 
         public static Dictionary<ConsoleLevel, bool> ConsoleLevels;
         //public static INetwork Network;
@@ -87,7 +87,7 @@ namespace Polymono {
                 tickRate = 120;
             }
             Print($"Using {tickRate} tick rate.");
-            using (GameClient game = new GameClient())
+            using (GameClient game = new GameClient(4))
             {
                 game.Run(60.0d, tickRate);
             }

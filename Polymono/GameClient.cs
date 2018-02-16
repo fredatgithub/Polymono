@@ -20,28 +20,37 @@ using System.Threading.Tasks;
 
 namespace Polymono {
     public enum ProgramID {
-        Default, Textured, Coloured, Full, Dice, Player
+        Default, Textured, Coloured, Full, Dice, Player, Skybox
     }
 
     class GameClient : GameWindow {
         public static bool FatalError = false;
         public static bool StopForErrors = true;
+        public static int MajorVersion = 0;
+        public static int MinorVersion = 0;
         // Programs
         public Dictionary<ProgramID, ShaderProgram> Programs;
         // Models
         public Dictionary<int, AModel> Models;
         // Matrices
         public Matrix4 ViewMatrix;
+        public Matrix4 StaticViewMatrix;
         public Matrix4 ProjectionMatrix;
         // Game objects
+        public GameState State;
         public Camera Camera;
         public Board Board;
         public Dice Dice;
-        public Player Player;
+        public Player[] Players;
         // Light object
         Light activeLight = new Light(Vector3.Zero, new Vector3(0.9f, 0.80f, 0.8f));
+        //Misc object
+        public ModelObject Skybox;
 
-        public GameClient() : base(1280, 720, new GraphicsMode(32, 24, 0, 4))
+        public double rTime = 0.0d;
+        public double uTime = 0.0d;
+
+        public GameClient(int playerCount) : base(1280, 720, new GraphicsMode(32, 24, 0, 4))
         {
             Polymono.Print(ConsoleLevel.Debug, $"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
             Polymono.Print(ConsoleLevel.Debug, $"OpenGL Extensions: {GL.GetString(StringName.Extensions)}");
@@ -51,9 +60,14 @@ namespace Polymono {
             Polymono.Print($"Windows OS: {Environment.OSVersion}");
             Polymono.Print($"CLR version: {Environment.Version}");
 
+            string version = GL.GetString(StringName.Version);
+            MajorVersion = version[0];
+            MinorVersion = version[2];
+            State = new GameState(playerCount);
             Programs = new Dictionary<ProgramID, ShaderProgram>();
             Models = new Dictionary<int, AModel>();
             Camera = new Camera();
+            Players = new Player[playerCount];
         }
 
         protected override void OnLoad(EventArgs e)
@@ -93,52 +107,44 @@ namespace Polymono {
             Programs.Add(ProgramID.Full, new ShaderProgram("vs_full.glsl", "fs_full.glsl", "Full"));
             Programs.Add(ProgramID.Dice, new ShaderProgram("vs_dice.glsl", "fs_dice.glsl", "Dice"));
             Programs.Add(ProgramID.Player, new ShaderProgram("vs_player.glsl", "fs_player.glsl", "Player"));
+            Programs.Add(ProgramID.Skybox, new ShaderProgram("vs_skybox.glsl", "fs_skybox.glsl", "Skybox"));
 
-            // Set vertices.
-            List<Vertex> vertices = new List<Vertex> {
-                new Vertex(new Vector3(-0.5f, -0.5f, 0.0f), Color4.White, new Vector2(1.0f, 1.0f)),
-                new Vertex(new Vector3(-0.5f, 0.5f, 0.0f), Color4.White, new Vector2(0.0f, 1.0f)),
-                new Vertex(new Vector3(0.5f, 0.5f, 0.0f), Color4.White, new Vector2(0.0f, 0.0f)),
-                new Vertex(new Vector3(0.5f, -0.5f, 0.0f), Color4.White, new Vector2(1.0f, 0.0f))
-            };
+            Skybox = new ModelObject(@"Resources\Objects\sphere.obj", false);
+            Skybox.CreateBuffer();
 
-            int[] indices = new int[] {
-                0, 1, 3,
-                2, 3, 1
-            };
-
-            Board = new Board() {
-                Model = new Model(vertices, indices,
-                    Vector3.Zero, new Vector3(ToRadians(-90.0f), 0.0f, 0.0f), new Vector3(5.0f),
-                    @"Resources\Textures\polymono.png")
-            };
+            Board = new Board();
 
             Dice = new Dice() {
                 Model = new ModelObject(@"Resources\Objects\cube.obj",
-                    new Vector3(2.0f, 1.0f, 0.0f), Vector3.Zero, new Vector3(0.05f, 0.05f, 0.05f),
+                    new Vector3(0.25f, 0.05f, 0.0f), Vector3.Zero, new Vector3(0.05f),
                     @"Resources\Textures\cube_textured_uv.png",
                     @"Resources\Objects\cube.mtl",
                     @"Material")
             };
 
-            Player = new Player() {
-                Model = new ModelObject(@"Resources\Objects\player.obj", Color4.Aqua,
-                    new Vector3(0.0f, 0.0f, 0.0f), Vector3.Zero, new Vector3(0.25f, 0.25f, 0.25f),
-                    @"Resources\Objects\player.mtl",
-                    @"b0b0b0")
-            };
+            for (int i = 0; i < State.PlayerCount; i++)
+            {
+                Players[i] = new Player(Board);
+            }
 
             Board.Model.CreateBuffer();
             Dice.Model.CreateBuffer();
-            Player.Model.CreateBuffer();
+            foreach (var player in Players)
+            {
+                player.Model.CreateBuffer();
+            }
 
             Models.Add(Board.Model.ID, Board.Model);
             Models.Add(Dice.Model.ID, Dice.Model);
-            Models.Add(Player.Model.ID, Player.Model);
+            foreach (var player in Players)
+            {
+                Models.Add(player.Model.ID, player.Model);
+            }
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
         {
+            uTime += e.Time;
             Title = $"Polymono | FPS: {1f / RenderPeriod:0} | TPS: {1f / UpdatePeriod:0}";
             // Error handling.
             if (FatalError && StopForErrors)
@@ -148,31 +154,42 @@ namespace Polymono {
                 FatalError = false;
                 StopForErrors = false;
             }
-            // Update inputs and 
+            // Update inputs and camera.
             UpdateInput(e.Time);
             UpdateCamera();
 
-            Random random = new Random();
-            Models[Dice.Model.ID].Rotate(new Vector3(0.001f, 0.0f, 0.0f));
-            Polymono.DebugF($"{Models[Dice.Model.ID].Rotation}");
+            // Manage game state.
+
+            //Random random = new Random();
+            //Models[Dice.Model.ID].Rotate(new Vector3(0.001f, 0.0f, 0.0f));
+            //Polymono.DebugF($"{Models[Dice.Model.ID].Rotation}");
 
             // Update matrices.
+            Skybox.UpdateModelMatrix();
             foreach (var model in Models.Values)
             {
                 model.UpdateModelMatrix();
             }
             ViewMatrix = Camera.GetViewMatrix();
+            StaticViewMatrix = Camera.GetStaticViewMatrix();
             ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(
                 ToRadians(Camera.Zoom),
                 (float)Width / Height,
                 0.1f,
-                100f);
+                1000f);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
-            GL.ClearColor(Color.LightCyan);
+            rTime += e.Time;
+            GL.ClearColor(Color.Black);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
+            // Skybox render
+            Programs[ProgramID.Skybox].UseProgram();
+            GL.UniformMatrix4(18, false, ref ProjectionMatrix);
+            GL.UniformMatrix4(17, false, ref StaticViewMatrix);
+            GL.Uniform1(32, (float)rTime);
+            Skybox.RenderObject(ProgramID.Skybox);
             // Basic renderer
             Programs[ProgramID.Full].UseProgram();
             GL.UniformMatrix4(18, false, ref ProjectionMatrix);
@@ -190,8 +207,11 @@ namespace Polymono {
             // Player renderer
             Programs[ProgramID.Player].UseProgram();
             GL.UniformMatrix4(18, false, ref ProjectionMatrix);
-            GL.UniformMatrix4(17, false, ref ViewMatrix);
-            Player.Model.RenderObject(ProgramID.Player);
+            foreach (var player in Players)
+            {
+                GL.UniformMatrix4(17, false, ref ViewMatrix);
+                player.Model.RenderObject(ProgramID.Player);
+            }
 
             SwapBuffers();
         }
@@ -211,7 +231,7 @@ namespace Polymono {
                 ToRadians(Camera.Zoom),
                 (float)Width / Height,
                 0.1f,
-                100f);
+                1000f);
         }
 
         protected override void OnFocusedChanged(EventArgs e)
@@ -231,6 +251,8 @@ namespace Polymono {
         {
 
         }
+
+        int selectedObjectID = 0;
 
         protected void UpdateInput(double deltaTime)
         {
@@ -264,35 +286,94 @@ namespace Polymono {
                     Camera.ProcessKeyboard(CameraMovement.Down, deltaTimef);
                 }
                 // Object manipulation.
+                // Selected object
+                if (keyState.IsKeyDown(Key.Number0))
+                {
+                    if (selectedObjectID != 0)
+                    {
+                        Polymono.Print("Selected object ID changed to 0");
+                    }
+                    selectedObjectID = 0;
+                }
+                // Selected object
+                if (keyState.IsKeyDown(Key.Number1))
+                {
+                    if (selectedObjectID != 1)
+                    {
+                        Polymono.Print("Selected object ID changed to 1");
+                    }
+                    selectedObjectID = 1;
+                }
+                // Selected object
+                if (keyState.IsKeyDown(Key.Number2))
+                {
+                    if (selectedObjectID != 2)
+                    {
+                        Polymono.Print("Selected object ID changed to 2");
+                    }
+                    selectedObjectID = 2;
+                }
+                // Selected object
+                if (keyState.IsKeyDown(Key.Number3))
+                {
+                    if (selectedObjectID != 3)
+                    {
+                        Polymono.Print("Selected object ID changed to 3");
+                    }
+                    selectedObjectID = 3;
+                }
+                // Selected object
+                if (keyState.IsKeyDown(Key.Number4))
+                {
+                    if (selectedObjectID != 4)
+                    {
+                        Polymono.Print("Selected object ID changed to 4");
+                    }
+                    selectedObjectID = 4;
+                }
+                // Selected object
+                if (keyState.IsKeyDown(Key.Number5))
+                {
+                    if (selectedObjectID != 5)
+                    {
+                        Polymono.Print("Selected object ID changed to 5");
+                    }
+                    selectedObjectID = 5;
+                }
                 if (keyState.IsKeyDown(Key.Keypad8))
                 {
                     // Move object forward (Z)
-                    Models[Dice.Model.ID].Translate(new Vector3(0.0f, 0.0f, 0.05f));
+                    Models[selectedObjectID].Translate(new Vector3(0.0f, 0.0f, 0.05f));
                 }
                 if (keyState.IsKeyDown(Key.Keypad2))
                 {
                     // Move object backward (Z)
-                    Models[Dice.Model.ID].Translate(new Vector3(0.0f, 0.0f, -0.05f));
+                    Models[selectedObjectID].Translate(new Vector3(0.0f, 0.0f, -0.05f));
                 }
                 if (keyState.IsKeyDown(Key.Keypad4))
                 {
                     // Move object left (X)
-                    Models[Dice.Model.ID].Translate(new Vector3(0.05f, 0.0f, 0.0f));
+                    Models[selectedObjectID].Translate(new Vector3(0.05f, 0.0f, 0.0f));
                 }
                 if (keyState.IsKeyDown(Key.Keypad6))
                 {
                     // Move object right (X)
-                    Models[Dice.Model.ID].Translate(new Vector3(-0.05f, 0.0f, 0.0f));
+                    Models[selectedObjectID].Translate(new Vector3(-0.05f, 0.0f, 0.0f));
                 }
                 if (keyState.IsKeyDown(Key.Keypad9))
                 {
                     // Move object up (Y)
-                    Models[Dice.Model.ID].Translate(new Vector3(0.0f, 0.05f, 0.0f));
+                    Models[selectedObjectID].Translate(new Vector3(0.0f, 0.05f, 0.0f));
                 }
                 if (keyState.IsKeyDown(Key.Keypad7))
                 {
                     // Move object Down (Y)
-                    Models[Dice.Model.ID].Translate(new Vector3(0.0f, -0.05f, 0.0f));
+                    Models[selectedObjectID].Translate(new Vector3(0.0f, -0.05f, 0.0f));
+                }
+                if (keyState.IsKeyDown(Key.Keypad5))
+                {
+                    // Reset object
+                    Models[selectedObjectID].ResetModel();
                 }
                 if (keyState.IsKeyDown(Key.Escape))
                 {
