@@ -1,14 +1,14 @@
-﻿#version 440 core
+﻿#version 400 core
 
-layout (location = 0) in vec3 vPosition;
-layout (location = 1) in vec2 vTexture;
-layout (location = 2) in vec3 vNormal;
+in vec3 vPosition;
+in vec2 vTexture;
+in vec3 vNormal;
 
 out vec2 finalTexture;
 
-layout (location = 16) uniform mat4 model;
-layout (location = 17) uniform mat4 view;
-layout (location = 18) uniform mat4 projection;
+uniform mat4 model;
+uniform mat4 view;
+uniform mat4 projection;
 
 void main()
 {

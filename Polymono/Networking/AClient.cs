@@ -10,7 +10,7 @@ namespace Polymono.Networking {
         public Socket LocalSocket;
         public Dictionary<int, SocketState> ConnectedUsers;
 
-        public abstract void Send(params Packet[] data);
+        public abstract void Send(Packet[] data, AsyncCallback p);
 
         public abstract void AddClient(SocketState state);
 
@@ -44,8 +44,8 @@ namespace Polymono.Networking {
         protected void ReceiveCallback(IAsyncResult ar)
         {
             Polymono.Debug("Client::ReceiveCallback");
-            // Retrieve the state object and the client socket   
-            // from the asynchronous state object.  
+            // Retrieve the state object and the client socket
+            // from the asynchronous state object.
             SocketState state = (SocketState)ar.AsyncState;
             Socket client = state.Socket;
             try
@@ -84,11 +84,11 @@ namespace Polymono.Networking {
         protected void SendCallback(IAsyncResult ar)
         {
             Polymono.Debug("Client::SendCallback");
-            // Retrieve the socket from the state object.  
+            // Retrieve the socket from the state object.
             Socket client = (Socket)ar.AsyncState;
             try
             {
-                // Complete sending the data to the remote device.  
+                // Complete sending the data to the remote device.
                 int bytesSent = client.EndSend(ar);
                 Polymono.DebugF($"Sent {bytesSent} bytes to server.");
             } catch (Exception e)

@@ -19,7 +19,12 @@ namespace Polymono.Graphics {
         public float Pitch = 0.0f;
         public float MovementSpeed = 2.5f;
         public float MouseSensitivity = 0.1f;
-        public float Zoom = 45.0f;
+        public float Zoom = 75.0f;
+
+        public Camera(Vector3 position)
+        {
+            Position = position;
+        }
 
         public Matrix4 GetViewMatrix()
         {

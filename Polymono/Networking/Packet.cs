@@ -38,6 +38,7 @@ namespace Polymono.Networking {
                     terminate = false;
                 }
                 packets[i] = new Packet(type, targetID, terminate, data.Substring(i * DataSize, size));
+                packets[i].Encode();
             }
             return packets;
         }
@@ -74,7 +75,7 @@ namespace Polymono.Networking {
         {
             if (DataBuffer != null)
             {
-                Polymono.Debug("------------------------------START--------------------------------");
+                Polymono.Debug("------------------------------START ENCODE--------------------------------");
                 Polymono.Debug($"Type: {Type}");
                 Polymono.Debug($"Target ID: {TargetID}");
                 Polymono.Debug($"Terminate: {Terminate}");
@@ -104,7 +105,7 @@ namespace Polymono.Networking {
                 Polymono.Debug($"Data bytes: {PrintByteArray(dataBytes)}");
                 Polymono.Debug($"Terminator bytes: {terminatorBytes}");
                 Polymono.Debug($"Byte buffer: {PrintByteArray(ByteBuffer)}");
-                Polymono.Debug("-------------------------------END---------------------------------");
+                Polymono.Debug("-------------------------------END ENCODE---------------------------------");
             } else
             {
                 Polymono.Print(ConsoleLevel.Warning, "Attempting to encode a packet with no data buffer.");
@@ -115,7 +116,7 @@ namespace Polymono.Networking {
         {
             if (ByteBuffer != null)
             {
-                Polymono.Debug("------------------------------START--------------------------------");
+                Polymono.Debug("------------------------------START DECODE--------------------------------");
                 Polymono.Debug($"Byte buffer: {PrintByteArray(ByteBuffer)}");
                 Polymono.Debug("Converting bytes to objects...");
                 // Do byte->object conversions.
@@ -131,7 +132,7 @@ namespace Polymono.Networking {
                 Polymono.Debug($"Target ID: {TargetID}");
                 Polymono.Debug($"Terminate: {Terminate}");
                 Polymono.Debug($"DataBuffer: {DataBuffer}");
-                Polymono.Debug("-------------------------------END---------------------------------");
+                Polymono.Debug("-------------------------------END DECODE---------------------------------");
             } else
             {
                 Polymono.Print(ConsoleLevel.Warning, "Attempting to encode a packet with no byte buffer.");

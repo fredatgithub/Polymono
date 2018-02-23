@@ -27,7 +27,7 @@ namespace Polymono.Game {
                 2, 3, 1
             };
 
-            float scaleFactor = 2.0f;
+            float scaleFactor = 5.0f;
 
             Model = new Model(vertices, indices,
                 Vector3.Zero, new Vector3(GameClient.ToRadians(-90.0f), 0.0f, 0.0f), new Vector3(scaleFactor),

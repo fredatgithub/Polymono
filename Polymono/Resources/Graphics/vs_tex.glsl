@@ -1,6 +1,6 @@
-﻿#version 440 core
+﻿#version 400 core
 
-layout (location = 0) in vec3 vPosition;
+in vec3 vPosition;
 
 void main()
 {

@@ -1,35 +1,53 @@
 ﻿
 Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio 15
-VisualStudioVersion = 15.0.27004.2009
+VisualStudioVersion = 15.0.27130.2027
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Polymono", "Polymono\Polymono.csproj", "{E1F4045F-181D-4B8A-939B-FE1E3C03B901}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PolyTest", "PolyTest\PolyTest.csproj", "{498E213A-1C5C-4B80-AF45-E9D53673312E}"
+EndProject
 Global
-	GlobalSection(Performance) = preSolution
-		HasPerformanceSessions = true
-	EndGlobalSection
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
 		Debug|x64 = Debug|x64
+		Debug|x86 = Debug|x86
 		Release|Any CPU = Release|Any CPU
 		Release|x64 = Release|x64
+		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
 		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Debug|x64.ActiveCfg = Debug|x64
 		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Debug|x64.Build.0 = Debug|x64
+		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Debug|x86.ActiveCfg = Debug|x86
+		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Debug|x86.Build.0 = Debug|x86
 		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Release|Any CPU.Build.0 = Release|Any CPU
 		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Release|x64.ActiveCfg = Release|x64
 		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Release|x64.Build.0 = Release|x64
+		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Release|x86.ActiveCfg = Release|x86
+		{E1F4045F-181D-4B8A-939B-FE1E3C03B901}.Release|x86.Build.0 = Release|x86
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Debug|x64.ActiveCfg = Debug|Any CPU
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Debug|x64.Build.0 = Debug|Any CPU
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Debug|x86.ActiveCfg = Debug|Any CPU
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Release|x64.ActiveCfg = Release|Any CPU
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Release|x64.Build.0 = Release|Any CPU
+		{498E213A-1C5C-4B80-AF45-E9D53673312E}.Release|x86.ActiveCfg = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6002E4BB-2803-43C4-89D7-454F01898FB2}
+	EndGlobalSection
+	GlobalSection(Performance) = preSolution
+		HasPerformanceSessions = true
 	EndGlobalSection
 	GlobalSection(Performance) = preSolution
 		HasPerformanceSessions = true

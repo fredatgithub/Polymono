@@ -1,10 +1,10 @@
-﻿#version 440 core
+﻿#version 400 core
 
 in vec3 position;
 
 out vec4 FragColor;
 
-layout (location = 32) uniform float time;
+uniform float time;
 
 void main()
 {

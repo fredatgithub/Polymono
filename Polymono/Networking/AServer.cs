@@ -5,12 +5,14 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Networking {
-    abstract class AServer : INetwork {
+namespace Polymono.Networking
+{
+    abstract class AServer : INetwork
+    {
         public Socket LocalSocket;
         public Dictionary<int, SocketState> ConnectedUsers;
 
-        public abstract void Send(params Packet[] packets);
+        public abstract void Send(Packet[] packets, AsyncCallback p);
 
         public abstract void SendFrom(int fromID, params Packet[] packets);
 
@@ -29,7 +31,8 @@ namespace Polymono.Networking {
                 Socket handler = listener.EndAccept(ar);
                 Polymono.Debug($"Client connected from {handler.RemoteEndPoint}");
                 // Create the state object.
-                SocketState state = new SocketState {
+                SocketState state = new SocketState
+                {
                     Socket = handler
                 };
                 // Run method to propagate client to all clients.
@@ -43,7 +46,8 @@ namespace Polymono.Networking {
                 // Being receiving.
                 handler.BeginReceive(state.ByteBuffer, 0, PacketHandler.BufferSize, 0,
                     new AsyncCallback(ReceiveCallback), state);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Polymono.Debug(e.ToString());
             }
@@ -76,10 +80,14 @@ namespace Polymono.Networking {
                     if (packet.Terminate)
                     {
                         // Packet is last of chain.
+                        // TODO: CALLBACK FUNCTION
+                        Polymono.Debug($"State Object test ID: {state.TestID}");
+                        state.p(ar);
                         // Reset buffers in state object.
                         state.DataBuffer.Clear();
                     }
-                } else
+                }
+                else
                 {
                     Polymono.Error("No bytes sent from client.");
                     Polymono.Error($"---------- Stopping all networking on {handler.RemoteEndPoint}. ----------");
@@ -90,7 +98,8 @@ namespace Polymono.Networking {
                 // Begin receiving the data from the remote device.  
                 handler.BeginReceive(state.ByteBuffer, 0, PacketHandler.BufferSize, 0,
                     new AsyncCallback(ReceiveCallback), state);
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Polymono.Error(e.ToString());
             }
@@ -106,7 +115,8 @@ namespace Polymono.Networking {
                 // Complete sending the data to the remote device.  
                 int bytesSent = handler.EndSend(ar);
                 Polymono.DebugF($"Sent {bytesSent} bytes to client.");
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Polymono.Error(e.ToString());
             }

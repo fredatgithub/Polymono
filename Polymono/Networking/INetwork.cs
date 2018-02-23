@@ -6,8 +6,7 @@ using System.Threading.Tasks;
 
 namespace Polymono.Networking {
     interface INetwork {
-        void Send(params Packet[] packets);
-
         void Exit();
+        void Send(Packet[] packets, AsyncCallback p);
     }
 }

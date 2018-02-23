@@ -32,12 +32,12 @@ namespace Polymono.Networking {
             }
         }
 
-        public override void Send(params Packet[] packets)
+        public override void Send(Packet[] packets, AsyncCallback p)
         {
             foreach (Packet packet in packets)
             {
                 LocalSocket.BeginSend(packet.ByteBuffer, 0, packet.ByteBuffer.Length,
-                    SocketFlags.None, new AsyncCallback(SendCallback), LocalSocket);
+                    SocketFlags.None, p, LocalSocket);
             }
         }
 

@@ -17,7 +17,7 @@ namespace Polymono.Graphics {
 
         }
 
-        public override void CreateBuffer()
+        public override void CreateBuffer(ShaderProgram program)
         {
             VAO = GL.GenVertexArray();
             VBO = GL.GenBuffer();
@@ -32,8 +32,8 @@ namespace Polymono.Graphics {
                     Vertices, BufferUsageHint.StaticDraw);
                 // Set vertex attribute pointers.
                 // Position
-                GL.EnableVertexAttribArray(0);
-                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false,
+                GL.EnableVertexAttribArray(program.GetAttrib("vPosition"));
+                GL.VertexAttribPointer(program.GetAttrib("vPosition"), 3, VertexAttribPointerType.Float, false,
                     PositionVertex.Size, 0);
             } else
             {
@@ -43,9 +43,9 @@ namespace Polymono.Graphics {
                     BufferStorageFlags.MapWriteBit);
                 // Set vertex attribute pointers.
                 // Position
-                GL.VertexArrayAttribBinding(VAO, 0, 0);
-                GL.EnableVertexArrayAttrib(VAO, 0);
-                GL.VertexArrayAttribFormat(VAO, 0, 3, VertexAttribType.Float, false, 0);
+                GL.VertexArrayAttribBinding(VAO, program.GetAttrib("vPosition"), 0);
+                GL.EnableVertexArrayAttrib(VAO, program.GetAttrib("vPosition"));
+                GL.VertexArrayAttribFormat(VAO, program.GetAttrib("vPosition"), 3, VertexAttribType.Float, false, 0);
                 // Link
                 GL.VertexArrayVertexBuffer(VAO, 0, VBO, IntPtr.Zero, PositionVertex.Size);
             }
@@ -204,11 +204,11 @@ namespace Polymono.Graphics {
             }
         }
 
-        public override void RenderObject(ProgramID id)
+        public override void Render(ShaderProgram program)
         {
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-            GL.UniformMatrix4(16, false, ref ModelMatrix);
+            program.UniformMatrix4("model", ref ModelMatrix);
             // Draw arrays...
             GL.DrawArrays(PrimitiveType.Triangles, 0, Vertices.Length);
         }

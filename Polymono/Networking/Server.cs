@@ -39,7 +39,7 @@ namespace Polymono.Networking {
             }
         }
 
-        public override void Send(params Packet[] packets)
+        public override void Send(Packet[] packets, AsyncCallback p)
         {
             foreach (Packet packet in packets)
             {
@@ -49,18 +49,22 @@ namespace Polymono.Networking {
                     {
                         if (state.ID != 0)
                         {
-                            Socket handler = state.Socket;
-                            handler.BeginSend(packet.ByteBuffer, 0, packet.ByteBuffer.Length,
-                                SocketFlags.None, new AsyncCallback(SendCallback), handler);
+                            // Begin to send packets to all connected users.
+                            state.p = p;
+                            state.TestID = state.TestID + 1;
+                            Polymono.Debug($"Send stateobject test ID: {state.TestID}");
+                            state.Socket.BeginSend(packet.ByteBuffer, 0, packet.ByteBuffer.Length,
+                                SocketFlags.None, ReceiveCallback, state);
                         }
                     }
                 } else
                 {
                     if (ConnectedUsers.ContainsKey(packet.TargetID))
                     {
-                        Socket handler = ConnectedUsers[packet.TargetID].Socket;
-                        handler.BeginSend(packet.ByteBuffer, 0, packet.ByteBuffer.Length,
-                            SocketFlags.None, new AsyncCallback(SendCallback), handler);
+                        SocketState state = ConnectedUsers[packet.TargetID];
+                        state.p = p;
+                        state.Socket.BeginSend(packet.ByteBuffer, 0, packet.ByteBuffer.Length,
+                            SocketFlags.None, new AsyncCallback(SendCallback), state);
                     }
                 }
             }

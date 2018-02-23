@@ -41,17 +41,9 @@ namespace Polymono.Graphics {
             OriginScaling = scaling;
         }
 
-        public abstract void CreateBuffer();
+        public abstract void CreateBuffer(ShaderProgram program);
 
-        public virtual void Render()
-        {
-            Polymono.Debug($"Render methods don't exist for ID: {ID}");
-        }
-
-        public virtual void RenderObject(ProgramID id)
-        {
-            Render();
-        }
+        public abstract void Render(ShaderProgram program);
 
         public abstract void Delete();
 

@@ -7,8 +7,10 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 
-namespace Polymono.Graphics {
-    class ModelObject : AModel {
+namespace Polymono.Graphics
+{
+    class ModelObject : AModel
+    {
         // Vertex data
         public List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>> Faces;
         public ObjectVertex[] Vertices;
@@ -76,13 +78,17 @@ namespace Polymono.Graphics {
             Material = CreateMaterial(materialLocation, materialName);
         }
 
-        public override void CreateBuffer()
+        public override void CreateBuffer(ShaderProgram program)
         {
             VAO = GL.GenVertexArray();
             VBO = GL.GenBuffer();
             // Bind VAO then VBO for data inputs.
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
+            int vPosition = program.GetAttrib("vPosition");
+            int vNormal = program.GetAttrib("vNormal");
+            int vColour = program.GetAttrib("vColour");
+            int vTexture = program.GetAttrib("vTexture");
             if (GameClient.MajorVersion == '4' && GameClient.MinorVersion < '5')
             {
                 Polymono.Debug("Below 4.5 version.");
@@ -91,47 +97,72 @@ namespace Polymono.Graphics {
                     Vertices, BufferUsageHint.StaticDraw);
                 // Set vertex attribute pointers.
                 // Position
-                GL.EnableVertexAttribArray(0);
-                GL.VertexAttribPointer(0, 3, VertexAttribPointerType.Float, false,
-                    ObjectVertex.Size, 0);
+                if (vPosition != -1)
+                {
+                    GL.EnableVertexAttribArray(vPosition);
+                    GL.VertexAttribPointer(vPosition, 3, VertexAttribPointerType.Float, false,
+                        ObjectVertex.Size, 0);
+                }
                 // Normal
-                GL.EnableVertexAttribArray(1);
-                GL.VertexAttribPointer(1, 3, VertexAttribPointerType.Float, false,
-                    ObjectVertex.Size, 3 * sizeof(float));
+                if (vNormal != -1)
+                {
+                    GL.EnableVertexAttribArray(vNormal);
+                    GL.VertexAttribPointer(vNormal, 3, VertexAttribPointerType.Float, false,
+                        ObjectVertex.Size, 3 * sizeof(float));
+                }
                 // Colour
-                GL.EnableVertexAttribArray(2);
-                GL.VertexAttribPointer(2, 4, VertexAttribPointerType.Float, false,
-                    ObjectVertex.Size, (3 + 3) * sizeof(float));
+                if (vColour != -1)
+                {
+                    GL.EnableVertexAttribArray(vColour);
+                    GL.VertexAttribPointer(vColour, 4, VertexAttribPointerType.Float, false,
+                        ObjectVertex.Size, (3 + 3) * sizeof(float));
+                }
                 // Texture
-                GL.EnableVertexAttribArray(3);
-                GL.VertexAttribPointer(3, 2, VertexAttribPointerType.Float, false,
-                    ObjectVertex.Size, (3 + 3 + 4) * sizeof(float));
-            } else
+                if (vTexture != -1)
+                {
+                    GL.EnableVertexAttribArray(vTexture);
+                    GL.VertexAttribPointer(vTexture, 2, VertexAttribPointerType.Float, false,
+                        ObjectVertex.Size, (3 + 3 + 4) * sizeof(float));
+                }
+            }
+            else
             {
                 Polymono.Debug("Above 4.5 version.");
                 // Input data to buffer.
                 GL.NamedBufferStorage(VBO, ObjectVertex.Size * Vertices.Length, Vertices, BufferStorageFlags.MapWriteBit);
                 // Set vertex attribute pointers.
                 // Position
-                GL.VertexArrayAttribBinding(VAO, 0, 0);
-                GL.EnableVertexArrayAttrib(VAO, 0);
-                GL.VertexArrayAttribFormat(VAO, 0, 3, VertexAttribType.Float, false,
-                    0);
+                if (vPosition != -1)
+                {
+                    GL.VertexArrayAttribBinding(VAO, vPosition, 0);
+                    GL.EnableVertexArrayAttrib(VAO, vPosition);
+                    GL.VertexArrayAttribFormat(VAO, vPosition, 3, VertexAttribType.Float, false,
+                        0);
+                }
                 // Normal
-                GL.VertexArrayAttribBinding(VAO, 1, 0);
-                GL.EnableVertexArrayAttrib(VAO, 1);
-                GL.VertexArrayAttribFormat(VAO, 1, 3, VertexAttribType.Float, false,
-                    3 * sizeof(float));
+                if (vNormal != -1)
+                {
+                    GL.VertexArrayAttribBinding(VAO, vNormal, 0);
+                    GL.EnableVertexArrayAttrib(VAO, vNormal);
+                    GL.VertexArrayAttribFormat(VAO, vNormal, 3, VertexAttribType.Float, false,
+                        3 * sizeof(float));
+                }
                 // Colour
-                GL.VertexArrayAttribBinding(VAO, 2, 0);
-                GL.EnableVertexArrayAttrib(VAO, 2);
-                GL.VertexArrayAttribFormat(VAO, 2, 4, VertexAttribType.Float, false,
-                    (3 + 3) * sizeof(float));
+                if (vColour != -1)
+                {
+                    GL.VertexArrayAttribBinding(VAO, vColour, 0);
+                    GL.EnableVertexArrayAttrib(VAO, vColour);
+                    GL.VertexArrayAttribFormat(VAO, vColour, 4, VertexAttribType.Float, false,
+                        (3 + 3) * sizeof(float));
+                }
                 // Texture
-                GL.VertexArrayAttribBinding(VAO, 3, 0);
-                GL.EnableVertexArrayAttrib(VAO, 3);
-                GL.VertexArrayAttribFormat(VAO, 3, 2, VertexAttribType.Float, false,
-                    (3 + 3 + 4) * sizeof(float));
+                if (vTexture != -1)
+                {
+                    GL.VertexArrayAttribBinding(VAO, vTexture, 0);
+                    GL.EnableVertexArrayAttrib(VAO, vTexture);
+                    GL.VertexArrayAttribFormat(VAO, vTexture, 2, VertexAttribType.Float, false,
+                        (3 + 3 + 4) * sizeof(float));
+                }
                 // Link
                 GL.VertexArrayVertexBuffer(VAO, 0, VBO, IntPtr.Zero, ObjectVertex.Size);
             }
@@ -140,22 +171,25 @@ namespace Polymono.Graphics {
             GL.BindVertexArray(0);
         }
 
-        public override void RenderObject(ProgramID id)
+        public override void Render(ShaderProgram program)
         {
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
             GL.BindTexture(TextureTarget.Texture2D, TextureID);
-            GL.UniformMatrix4(16, false, ref ModelMatrix);
+            program.UniformMatrix4("model", ref ModelMatrix);
             // Draw uniforms if material mapping is enabled.
-            if (Material != null && id == ProgramID.Dice)
+            if (Material != null && program.ProgramName == "Dice")
             {
-                GL.Uniform3(8, Material.AmbientColour);
-                GL.Uniform3(9, Material.DiffuseColour);
-                GL.Uniform3(10, Material.SpecularColour);
-                GL.Uniform1(11, Material.SpecularExponent);
+                program.Uniform3("material_ambient", ref Material.AmbientColour);
+                program.Uniform3("material_diffuse", ref Material.DiffuseColour);
+                program.Uniform3("material_specular", ref Material.SpecularColour);
+                program.Uniform1("material_specExponent", Material.SpecularExponent);
             }
             // Draw arrays...
             GL.DrawArrays(PrimitiveType.Triangles, 0, Vertices.Length);
+            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+            GL.BindTexture(TextureTarget.Texture2D, 0);
+            GL.BindVertexArray(0);
         }
 
         public override void Delete()
@@ -174,10 +208,12 @@ namespace Polymono.Graphics {
                 {
                     LoadFromString(reader.ReadToEnd(), colour);
                 }
-            } catch (FileNotFoundException e)
+            }
+            catch (FileNotFoundException e)
             {
                 Polymono.Error($"File not found: {filename + Environment.NewLine + e.ToString()}");
-            } catch (Exception e)
+            }
+            catch (Exception e)
             {
                 Console.WriteLine($"Error loading file: {filename + Environment.NewLine + e.ToString()}");
             }
@@ -216,12 +252,14 @@ namespace Polymono.Graphics {
                         {
                             Console.WriteLine("Error parsing vertex: {0}", line);
                         }
-                    } else
+                    }
+                    else
                     {
                         Console.WriteLine("Error parsing vertex: {0}", line);
                     }
                     verts.Add(vec);
-                } else if (line.StartsWith("vt ")) // Texture coordinate
+                }
+                else if (line.StartsWith("vt ")) // Texture coordinate
                 {
                     // Cut off beginning of line
                     String temp = line.Substring(2);
@@ -237,12 +275,14 @@ namespace Polymono.Graphics {
                         {
                             Console.WriteLine("Error parsing texture coordinate: {0}", line);
                         }
-                    } else
+                    }
+                    else
                     {
                         Console.WriteLine("Error parsing texture coordinate: {0}", line);
                     }
                     texs.Add(vec);
-                } else if (line.StartsWith("vn ")) // Normal vector
+                }
+                else if (line.StartsWith("vn ")) // Normal vector
                 {
                     // Cut off beginning of line
                     String temp = line.Substring(2);
@@ -259,12 +299,14 @@ namespace Polymono.Graphics {
                         {
                             Console.WriteLine("Error parsing normal: {0}", line);
                         }
-                    } else
+                    }
+                    else
                     {
                         Console.WriteLine("Error parsing normal: {0}", line);
                     }
                     normals.Add(vec);
-                } else if (line.StartsWith("f ")) // Face definition
+                }
+                else if (line.StartsWith("f ")) // Face definition
                 {
                     // Cut off beginning of line
                     String temp = line.Substring(2);
@@ -285,19 +327,22 @@ namespace Polymono.Graphics {
                             success |= int.TryParse(faceparts[0].Split('/')[2], out n1);
                             success |= int.TryParse(faceparts[1].Split('/')[2], out n2);
                             success |= int.TryParse(faceparts[2].Split('/')[2], out n3);
-                        } else
+                        }
+                        else
                         {
                             if (texs.Count > v1 && texs.Count > v2 && texs.Count > v3)
                             {
                                 t1 = v1; t2 = v2; t3 = v3;
-                            } else
+                            }
+                            else
                             {
                                 t1 = 0; t2 = 0; t3 = 0;
                             }
                             if (normals.Count > v1 && normals.Count > v2 && normals.Count > v3)
                             {
                                 n1 = v1; n2 = v2; n3 = v3;
-                            } else
+                            }
+                            else
                             {
                                 n1 = 0; n2 = 0; n3 = 0;
                             }
@@ -306,7 +351,8 @@ namespace Polymono.Graphics {
                         if (!success)
                         {
                             Console.WriteLine("Error parsing face: {0}", line);
-                        } else
+                        }
+                        else
                         {
                             TempVertex tv1 = new TempVertex(v1, n1, t1);
                             TempVertex tv2 = new TempVertex(v2, n2, t2);
@@ -314,7 +360,8 @@ namespace Polymono.Graphics {
                             face = new Tuple<TempVertex, TempVertex, TempVertex>(tv1, tv2, tv3);
                             faces.Add(face);
                         }
-                    } else
+                    }
+                    else
                     {
                         Console.WriteLine("Error parsing face: {0}", line);
                     }
@@ -379,12 +426,8 @@ namespace Polymono.Graphics {
             return null;
         }
 
-        public override void Render()
+        class TempVertex
         {
-            throw new NotImplementedException();
-        }
-
-        class TempVertex {
             public int Vertex;
             public int Normal;
             public int Texcoord;

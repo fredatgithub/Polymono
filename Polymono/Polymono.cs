@@ -16,7 +16,7 @@ namespace Polymono {
         public const int MaxPlayers = 8;
 
         public static Dictionary<ConsoleLevel, bool> ConsoleLevels;
-        //public static INetwork Network;
+        public static INetwork Network;
 
         public static void Main()
         {
@@ -41,23 +41,22 @@ namespace Polymono {
                 PrintF("Debugging is disabled.");
             }
             // ----------------------- SERVER OR CLIENT -----------------------
-            /*PrintF("Server or Client: ", false);
+            PrintF("Server or Client: ", false);
             input = Console.ReadLine().ToUpperInvariant();
             if (input == "SERVER")
             {
-                PrintF("Address: ", false);
-                input = Console.ReadLine();
                 Server server = new Server();
                 server.Start(2222);
                 Network = server;
-            } else if (input == "CLIENT")
+            }
+            else if (input == "CLIENT")
             {
                 PrintF("Address: ", false);
                 input = Console.ReadLine();
                 Client client = new Client();
                 client.Start(input, 2222);
                 Network = client;
-            }*/
+            }
             // ------------------------ SEND MESSAGES ------------------------
             /*PrintF("Begin sending packets...");
             Console.ReadLine();
@@ -76,7 +75,7 @@ namespace Polymono {
                 Network.Send(packets);
             }*/
             // ---------------------- START APPLICATION ----------------------
-            Print("Type desired tick rate: ", false);
+            Print("Type desired tick rate: ");
             input = Console.ReadLine();
             int tickRate = Convert.ToInt32(input);
             if (tickRate < 30)

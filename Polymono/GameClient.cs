@@ -6,6 +6,8 @@ using Polymono.Game;
 using Polymono.Graphics;
 using Polymono.Networking;
 using Polymono.Vertices;
+using QuickFont;
+using QuickFont.Configuration;
 using System;
 using System.Collections.Generic;
 using System.Diagnostics;
@@ -36,6 +38,7 @@ namespace Polymono {
         public Matrix4 ViewMatrix;
         public Matrix4 StaticViewMatrix;
         public Matrix4 ProjectionMatrix;
+        public Matrix4 UIProjectionMatrix;
         // Game objects
         public GameState State;
         public Camera Camera;
@@ -43,9 +46,12 @@ namespace Polymono {
         public Dice Dice;
         public Player[] Players;
         // Light object
-        Light activeLight = new Light(Vector3.Zero, new Vector3(0.9f, 0.80f, 0.8f));
+        Light activeLight = new Light(new Vector3(0.0f, 5.0f, 0.0f), new Vector3(1.0f, 1.0f, 1.0f));
         //Misc object
-        public ModelObject Skybox;
+        public Skybox Skybox;
+        // Text
+        public QFont _mainText;
+        public QFontDrawing _drawing;
 
         public double rTime = 0.0d;
         public double uTime = 0.0d;
@@ -63,26 +69,32 @@ namespace Polymono {
             string version = GL.GetString(StringName.Version);
             MajorVersion = version[0];
             MinorVersion = version[2];
+            if (MajorVersion < 3)
+            {
+                Polymono.ErrorF("Fatal error: OpenGL version 3 required.");
+                Console.ReadLine();
+                Exit();
+            }
             State = new GameState(playerCount);
             Programs = new Dictionary<ProgramID, ShaderProgram>();
             Models = new Dictionary<int, AModel>();
-            Camera = new Camera();
+            Camera = new Camera(new Vector3(0.0f, 2.0f, 0.0f));
             Players = new Player[playerCount];
         }
 
         protected override void OnLoad(EventArgs e)
         {
             // Enable OpenGL settings.
-            GL.Enable(EnableCap.Multisample);
             GL.Enable(EnableCap.DepthTest);
             GL.Enable(EnableCap.DebugOutput);
+            GL.Enable(EnableCap.DebugOutputSynchronous);
             GL.DebugMessageCallback((DebugSource source, DebugType type, int id,
                 DebugSeverity severity, int length, IntPtr message, IntPtr userParam) => {
                     switch (type)
                     {
                         case DebugType.DebugTypeError:
-                            Polymono.Error($"OpenGL error.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
-                            Polymono.ErrorF(source.ToString());
+                            Polymono.Error($"OpenGL error ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
+                            Polymono.ErrorF(Environment.StackTrace);
                             FatalError = true;
                             break;
                         case DebugType.DebugTypeDeprecatedBehavior:
@@ -95,7 +107,6 @@ namespace Polymono {
                         case DebugType.DebugTypePopGroup:
                         default:
                             Polymono.Debug($"OpenGL debug message.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
-                            Polymono.DebugF(source.ToString());
                             break;
                     }
                 }, (IntPtr)0);
@@ -109,12 +120,13 @@ namespace Polymono {
             Programs.Add(ProgramID.Player, new ShaderProgram("vs_player.glsl", "fs_player.glsl", "Player"));
             Programs.Add(ProgramID.Skybox, new ShaderProgram("vs_skybox.glsl", "fs_skybox.glsl", "Skybox"));
 
-            Skybox = new ModelObject(@"Resources\Objects\sphere.obj", false);
-            Skybox.CreateBuffer();
+            Skybox = new Skybox(@"Resources\Objects\sphere.obj", false);
+            Skybox.CreateBuffer(Programs[ProgramID.Skybox]);
 
             Board = new Board();
 
-            Dice = new Dice() {
+            Dice = new Dice()
+            {
                 Model = new ModelObject(@"Resources\Objects\cube.obj",
                     new Vector3(0.25f, 0.05f, 0.0f), Vector3.Zero, new Vector3(0.05f),
                     @"Resources\Textures\cube_textured_uv.png",
@@ -127,11 +139,11 @@ namespace Polymono {
                 Players[i] = new Player(Board);
             }
 
-            Board.Model.CreateBuffer();
-            Dice.Model.CreateBuffer();
+            Board.Model.CreateBuffer(Programs[ProgramID.Full]);
+            Dice.Model.CreateBuffer(Programs[ProgramID.Dice]);
             foreach (var player in Players)
             {
-                player.Model.CreateBuffer();
+                player.Model.CreateBuffer(Programs[ProgramID.Player]);
             }
 
             Models.Add(Board.Model.ID, Board.Model);
@@ -140,6 +152,20 @@ namespace Polymono {
             {
                 Models.Add(player.Model.ID, player.Model);
             }
+
+            _drawing = new QFontDrawing();
+            var builderConfig = new QFontBuilderConfiguration(true)
+            {
+                ShadowConfig =
+                {
+                    BlurRadius = 2,
+                    BlurPasses = 1,
+                    Type = ShadowType.Blurred
+                },
+                TextGenerationRenderHint = TextGenerationRenderHint.ClearTypeGridFit,
+                Characters = CharacterSet.General | CharacterSet.Japanese | CharacterSet.Thai | CharacterSet.Cyrillic
+            };
+            _mainText = new QFont(@"Fonts\times.ttf", 24, builderConfig);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -160,6 +186,7 @@ namespace Polymono {
 
             // Manage game state.
 
+
             //Random random = new Random();
             //Models[Dice.Model.ID].Rotate(new Vector3(0.001f, 0.0f, 0.0f));
             //Polymono.DebugF($"{Models[Dice.Model.ID].Rotation}");
@@ -172,47 +199,52 @@ namespace Polymono {
             }
             ViewMatrix = Camera.GetViewMatrix();
             StaticViewMatrix = Camera.GetStaticViewMatrix();
-            ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(
-                ToRadians(Camera.Zoom),
-                (float)Width / Height,
-                0.1f,
-                1000f);
+            ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(ToRadians(Camera.Zoom), (float)Width / Height, 0.1f, 1000f);
+            UIProjectionMatrix = Matrix4.CreateOrthographicOffCenter(ClientRectangle.X, ClientRectangle.Width, ClientRectangle.Y, ClientRectangle.Height, -1.0f, 1.0f);
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)
         {
             rTime += e.Time;
-            GL.ClearColor(Color.Black);
+            GL.ClearColor(Color.Aqua);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
-            // Skybox render
+            // Skybox renderer.
             Programs[ProgramID.Skybox].UseProgram();
-            GL.UniformMatrix4(18, false, ref ProjectionMatrix);
-            GL.UniformMatrix4(17, false, ref StaticViewMatrix);
-            GL.Uniform1(32, (float)rTime);
-            Skybox.RenderObject(ProgramID.Skybox);
-            // Basic renderer
+            Programs[ProgramID.Skybox].UniformMatrix4("projection", ref ProjectionMatrix);
+            Programs[ProgramID.Skybox].UniformMatrix4("view", ref StaticViewMatrix);
+            Programs[ProgramID.Skybox].Uniform1("time", (float)rTime);
+            Skybox.Render(Programs[ProgramID.Skybox]);
+            //// Basic renderer.
             Programs[ProgramID.Full].UseProgram();
-            GL.UniformMatrix4(18, false, ref ProjectionMatrix);
-            GL.UniformMatrix4(17, false, ref ViewMatrix);
-            Board.Model.Render();
-            // Dice renderer
+            Programs[ProgramID.Full].UniformMatrix4("projection", ref ProjectionMatrix);
+            Programs[ProgramID.Full].UniformMatrix4("view", ref ViewMatrix);
+            Board.Model.Render(Programs[ProgramID.Full]);
+            // Dice renderer.
             Programs[ProgramID.Dice].UseProgram();
-            GL.Uniform3(12, ref activeLight.Position);
-            GL.Uniform3(13, ref activeLight.Color);
-            GL.Uniform1(14, activeLight.DiffuseIntensity);
-            GL.Uniform1(15, activeLight.AmbientIntensity);
-            GL.UniformMatrix4(18, false, ref ProjectionMatrix);
-            GL.UniformMatrix4(17, false, ref ViewMatrix);
-            Dice.Model.RenderObject(ProgramID.Dice);
-            // Player renderer
+            Programs[ProgramID.Dice].Uniform3("light_position", ref activeLight.Position);
+            Programs[ProgramID.Dice].Uniform3("light_color", ref activeLight.Color);
+            Programs[ProgramID.Dice].Uniform1("light_ambientIntensity", activeLight.DiffuseIntensity);
+            Programs[ProgramID.Dice].Uniform1("light_diffuseIntensity", activeLight.AmbientIntensity);
+            Programs[ProgramID.Dice].UniformMatrix4("projection", ref ProjectionMatrix);
+            Programs[ProgramID.Dice].UniformMatrix4("view", ref ViewMatrix);
+            Programs[ProgramID.Dice].Uniform1("time", (float)rTime);
+            Dice.Model.Render(Programs[ProgramID.Dice]);
+            // Player renderer.
             Programs[ProgramID.Player].UseProgram();
-            GL.UniformMatrix4(18, false, ref ProjectionMatrix);
             foreach (var player in Players)
             {
-                GL.UniformMatrix4(17, false, ref ViewMatrix);
-                player.Model.RenderObject(ProgramID.Player);
+                Programs[ProgramID.Player].UniformMatrix4("projection", ref ProjectionMatrix);
+                Programs[ProgramID.Player].UniformMatrix4("view", ref ViewMatrix);
+                player.Model.Render(Programs[ProgramID.Player]);
             }
-
+            // Text renderer.
+            _drawing.ProjectionMatrix = UIProjectionMatrix;
+            _drawing.DrawingPrimitives.Clear();
+            _drawing.Print(_mainText, "Hello", new Vector3(0, Height, 0), QFontAlignment.Left);
+            _drawing.Print(_mainText, "World", new Vector3(0, Height - 30, 0), QFontAlignment.Left);
+            _drawing.RefreshBuffers();
+            _drawing.Draw();
+            // Finalise state.
             SwapBuffers();
         }
 
@@ -227,11 +259,8 @@ namespace Polymono {
         protected override void OnResize(EventArgs e)
         {
             GL.Viewport(0, 0, Width, Height);
-            ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(
-                ToRadians(Camera.Zoom),
-                (float)Width / Height,
-                0.1f,
-                1000f);
+            ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(ToRadians(Camera.Zoom), (float)Width / Height, 0.1f, 1000f);
+            UIProjectionMatrix = Matrix4.CreateOrthographicOffCenter(ClientRectangle.X, ClientRectangle.Width, ClientRectangle.Y, ClientRectangle.Height, -1.0f, 1.0f);
         }
 
         protected override void OnFocusedChanged(EventArgs e)
@@ -249,7 +278,24 @@ namespace Polymono {
 
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
+            if (e.KeyChar == 'g')
+            {
+                ProcessNetwork();
+                ProcessNetwork();
+            }
+        }
 
+        private void ProcessNetwork()
+        {
+            Console.WriteLine("Performing network task...");
+            Polymono.Network.Send(PacketHandler.Create(PacketType.Message, "Hello, Katie."), IAsyncResult =>
+            {
+                // Do resulting calculations.
+                Console.WriteLine("Network task returned.");
+                SocketState state = (SocketState)IAsyncResult.AsyncState;
+                Console.WriteLine("Test state ID: " + state.TestID);
+            });
+            Console.WriteLine("Network task processing...");
         }
 
         int selectedObjectID = 0;

@@ -12,11 +12,15 @@ namespace Polymono.Networking {
     class SocketState {
         // Local ID
         public int ID = 0;
+        // Test ID
+        public int TestID = 0;
         // Client socket.
         public Socket Socket = null;
         // Receive buffer.
         public byte[] ByteBuffer = new byte[PacketHandler.BufferSize];
         // Data buffer.
         public StringBuilder DataBuffer = new StringBuilder();
+        // Return method.
+        public AsyncCallback p;
     }
 }

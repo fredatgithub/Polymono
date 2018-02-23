@@ -30,7 +30,7 @@ namespace Polymono.Graphics {
             TextureID = CreateTexture(textureLocation);
         }
 
-        public override void CreateBuffer()
+        public override void CreateBuffer(ShaderProgram program)
         {
             VAO = GL.GenVertexArray();
             VBO = GL.GenBuffer();
@@ -93,13 +93,13 @@ namespace Polymono.Graphics {
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
         }
 
-        public override void Render()
+        public override void Render(ShaderProgram program)
         {
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, IBO);
             GL.BindTexture(TextureTarget.Texture2D, TextureID);
-            GL.UniformMatrix4(16, false, ref ModelMatrix);
+            program.UniformMatrix4("model", ref ModelMatrix);
             GL.DrawElements(BeginMode.Triangles, Indices.Length, DrawElementsType.UnsignedInt, 0);
 
         }

@@ -1,4 +1,4 @@
-﻿#version 440 core
+﻿#version 400 core
 
 in vec4 finalColour;
 
