@@ -10,17 +10,26 @@ namespace Polymono.Networking {
     /// State object for reading client data asynchronously.
     /// </summary>
     class SocketState {
-        // Local ID
+        /// <summary>
+        /// Local socket ID.
+        /// </summary>
         public int ID = 0;
-        // Test ID
-        public int TestID = 0;
-        // Client socket.
-        public Socket Socket = null;
-        // Receive buffer.
+        /// <summary>
+        /// Remote socket to another network endpoint.
+        /// </summary>
+        public Socket RemoteEndPoint;
+        /// <summary>
+        /// Return method after packets have been processed.
+        /// </summary>
+        public AsyncCallback NetworkCallback;
+        /// <summary>
+        /// Buffer of bit data ready to be sent/received across the network.
+        /// <para>Initialised capacity of PacketHandler.BufferSize</para>
+        /// </summary>
         public byte[] ByteBuffer = new byte[PacketHandler.BufferSize];
-        // Data buffer.
+        /// <summary>
+        /// Buffer of string data ready to be processed into bits or read.
+        /// </summary>
         public StringBuilder DataBuffer = new StringBuilder();
-        // Return method.
-        public AsyncCallback p;
     }
 }

@@ -113,12 +113,10 @@
     <Compile Include="Graphics\Model.cs" />
     <Compile Include="Graphics\ModelObject.cs" />
     <Compile Include="Graphics\Skybox.cs" />
-    <Compile Include="Networking\AClient.cs" />
-    <Compile Include="Networking\AServer.cs" />
     <Compile Include="Networking\Client.cs" />
+    <Compile Include="Networking\Server.cs" />
     <Compile Include="Networking\INetwork.cs" />
     <Compile Include="Networking\Packet.cs" />
-    <Compile Include="Networking\Server.cs" />
     <Compile Include="Networking\SocketState.cs" />
     <Compile Include="Polymono.cs" />
     <Compile Include="Game\Board.cs" />
