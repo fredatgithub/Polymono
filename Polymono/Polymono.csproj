@@ -114,6 +114,7 @@
     <Compile Include="Graphics\ModelObject.cs" />
     <Compile Include="Graphics\Skybox.cs" />
     <Compile Include="Networking\Client.cs" />
+    <Compile Include="Networking\PacketHandler.cs" />
     <Compile Include="Networking\Server.cs" />
     <Compile Include="Networking\INetwork.cs" />
     <Compile Include="Networking\Packet.cs" />
