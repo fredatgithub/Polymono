@@ -5,17 +5,32 @@ using System.Net.Sockets;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Networking {
+namespace Polymono.Networking
+{
+    /// <summary>
+    /// Represents an enumeration of a socket closing state.
+    /// </summary>
+    public enum ClosingState
+    {
+        NotClosing,
+        SendingShutdownRequest,
+        ReceivingShutdownRequest,
+        SendingFinalData,
+        ReceivingFinalData,
+        FinaliseShutdown
+    }
+
     /// <summary>
     /// State object for reading client data asynchronously.
     /// </summary>
-    class SocketState {
+    class SocketState
+    {
         /// <summary>
         /// Local socket ID.
         /// </summary>
         public int ID = 0;
         /// <summary>
-        /// Remote socket to another network endpoint.
+        /// Transmission handler to remote end point on the network.
         /// </summary>
         public Socket RemoteEndPoint;
         /// <summary>
@@ -31,5 +46,9 @@ namespace Polymono.Networking {
         /// Buffer of string data ready to be processed into bits or read.
         /// </summary>
         public StringBuilder DataBuffer = new StringBuilder();
+        /// <summary>
+        /// The closing state of the end point.
+        /// </summary>
+        public ClosingState ClosingState = ClosingState.NotClosing;
     }
 }

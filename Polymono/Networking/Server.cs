@@ -10,7 +10,10 @@ namespace Polymono.Networking
 {
     class Server : INetwork
     {
-        public Socket LocalSocket;
+        /// <summary>
+        /// Server end point for all clients to connect to.
+        /// </summary>
+        public Socket GlobalEndPoint;
         public Dictionary<int, SocketState> ConnectedUsers;
 
         public Server()
@@ -20,35 +23,23 @@ namespace Polymono.Networking
 
         public void Start(int port)
         {
-            Polymono.Debug("Server::Start");
             try
             {
                 // Create IP End point information for the local end point.
                 IPEndPoint localEP = new IPEndPoint(IPAddress.IPv6Any, port);
-                Polymono.Debug($"Host End Point: {localEP} Type: {localEP.AddressFamily}");
                 // Open/Bind a socket allowing connections to our local end point.
-                LocalSocket = new Socket(localEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
-                LocalSocket.Bind(localEP);
-                LocalSocket.Listen(16);
-                SocketState state = new SocketState()
-                {
-                    RemoteEndPoint = LocalSocket
-                };
-                AddClient(state);
-                Polymono.Debug($"Server ID: {state.ID}");
+                GlobalEndPoint = new Socket(localEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
+                GlobalEndPoint.Bind(localEP);
+                GlobalEndPoint.Listen(16);
+                Polymono.Debug($"Server started on {GlobalEndPoint.LocalEndPoint}");
                 // Start receiving.
-                LocalSocket.BeginAccept(new AsyncCallback(AcceptCallback), LocalSocket);
+                GlobalEndPoint.BeginAccept(new AsyncCallback(AcceptCallback), null);
             }
             catch (Exception e)
             {
-                Polymono.Debug(e.ToString());
+                Polymono.Error(e.ToString());
+                Polymono.Debug(e.StackTrace);
             }
-        }
-
-        public void AddClient(SocketState state)
-        {
-            state.ID = ConnectedUsers.Count;
-            ConnectedUsers.Add(ConnectedUsers.Count, state);
         }
 
         public void Send(Packet[] packets, AsyncCallback callback)
@@ -63,7 +54,6 @@ namespace Polymono.Networking
                         {
                             // Begin to send packets to all connected users.
                             state.NetworkCallback = callback;
-                            Polymono.Debug($"Send stateobject test ID: {state.TestID}");
                             state.RemoteEndPoint.BeginSend(packet.ByteBuffer, 0, packet.ByteBuffer.Length,
                                 SocketFlags.None, ReceiveCallback, state);
                         }
@@ -112,36 +102,33 @@ namespace Polymono.Networking
 
         public void Exit()
         {
-            Polymono.Debug("Server::Exit");
-            if (LocalSocket.Connected)
-            {
-                LocalSocket.Shutdown(SocketShutdown.Both);
-            }
-            LocalSocket.Close();
+
         }
 
+        /// <summary>
+        /// Process a client connecting to server end point.
+        /// </summary>
+        /// <param name="ar">Nullified parameter; no use for a state.</param>
         private void AcceptCallback(IAsyncResult ar)
         {
-            Polymono.Debug("Server::AcceptCallback");
-            // Get the socket that handles the client request.
-            Socket listener = (Socket)ar.AsyncState;
             try
             {
                 // Complete the connection.
-                Socket handler = listener.EndAccept(ar);
+                Socket handler = GlobalEndPoint.EndAccept(ar);
                 Polymono.Debug($"Client connected from {handler.RemoteEndPoint}");
                 // Create the state object.
-                SocketState state = new SocketState
+                SocketState state = new SocketState()
                 {
+                    ID = ConnectedUsers.Count,
                     RemoteEndPoint = handler
                 };
-                // Run method to propagate client to all clients.
-                AddClient(state);
+                // TODO: Run method to propagate client to all clients.
+                ConnectedUsers.Add(state.ID, state);
                 // Check if more users can join.
                 if (ConnectedUsers.Count < Polymono.MaxPlayers)
                 {
-                    // Begin accepting.
-                    LocalSocket.BeginAccept(new AsyncCallback(AcceptCallback), LocalSocket);
+                    // Begin accepting for more clients.
+                    GlobalEndPoint.BeginAccept(new AsyncCallback(AcceptCallback), GlobalEndPoint);
                 }
                 // Being receiving.
                 handler.BeginReceive(state.ByteBuffer, 0, PacketHandler.BufferSize, 0,
@@ -149,10 +136,15 @@ namespace Polymono.Networking
             }
             catch (Exception e)
             {
-                Polymono.Debug(e.ToString());
+                Polymono.Error(e.ToString());
+                Polymono.Debug(e.StackTrace);
             }
         }
 
+        /// <summary>
+        /// Process a client sending a message to server end point.
+        /// </summary>
+        /// <param name="ar">Asynchronous result to keep track of current state.</param>
         private void ReceiveCallback(IAsyncResult ar)
         {
             Polymono.Debug("Server::ReceiveCallback");
@@ -180,8 +172,6 @@ namespace Polymono.Networking
                     if (packet.Terminate)
                     {
                         // Packet is last of chain.
-                        // TODO: CALLBACK FUNCTION
-                        Polymono.Debug($"State Object test ID: {state.TestID}");
                         state.NetworkCallback(ar);
                         // Reset buffers in state object.
                         state.DataBuffer.Clear();
@@ -202,23 +192,28 @@ namespace Polymono.Networking
             catch (Exception e)
             {
                 Polymono.Error(e.ToString());
+                Polymono.Debug(e.StackTrace);
             }
         }
 
+        /// <summary>
+        /// Process a packet being sent to a remote end point.
+        /// </summary>
+        /// <param name="ar">Asynchronous result to keep track of current state.</param>
         private void SendCallback(IAsyncResult ar)
         {
-            Polymono.Debug("Server::SendCallback");
             // Retrieve the socket from the state object.  
-            Socket handler = (Socket)ar.AsyncState;
+            SocketState state = (SocketState)ar.AsyncState;
             try
             {
                 // Complete sending the data to the remote device.  
-                int bytesSent = handler.EndSend(ar);
+                int bytesSent = state.RemoteEndPoint.EndSend(ar);
                 Polymono.DebugF($"Sent {bytesSent} bytes to client.");
             }
-            catch (Exception e)
+            catch(Exception e)
             {
                 Polymono.Error(e.ToString());
+                Polymono.Debug(e.StackTrace);
             }
         }
     }

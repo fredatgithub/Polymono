@@ -9,7 +9,7 @@ namespace Polymono.Networking
     class PacketHandler
     {
         // Byte buffer size.
-        public const int BufferSize = 1536;
+        public const int BufferSize = 1024;
         // Data buffer sizes.
         public const int TypeSize = 4;
         public const int TargetIDSize = 4;

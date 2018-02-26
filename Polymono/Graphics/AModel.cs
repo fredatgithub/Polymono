@@ -4,12 +4,15 @@ using System;
 using System.Drawing;
 using System.IO;
 
-namespace Polymono.Graphics {
-    abstract class AModel {
+namespace Polymono.Graphics
+{
+    abstract class AModel
+    {
         // Identification
-        public static int TOTAL_IDS = 0;
+        public static int TotalID = 0;
         public int ID;
         // Buffer references
+        public ShaderProgram Program;
         public int VBO;
         public int VAO;
         public int IBO;
@@ -17,22 +20,24 @@ namespace Polymono.Graphics {
         // Matrices
         public Matrix4 ModelMatrix;
         // Spatial data
-        public Vector3 Position = Vector3.Zero;
-        public Vector3 Rotation = Vector3.Zero;
-        public Vector3 Scaling = Vector3.One;
+        public Vector3 Position;
+        public Vector3 Rotation;
+        public Vector3 Scaling;
         // Origin data
-        public Vector3 OriginPosition = Vector3.Zero;
-        public Vector3 OriginRotation = Vector3.Zero;
-        public Vector3 OriginScaling = Vector3.One;
+        public Vector3 OriginPosition;
+        public Vector3 OriginRotation;
+        public Vector3 OriginScaling;
 
-        public AModel(bool giveID)
+        public AModel(ShaderProgram program)
+            : this(program, Vector3.Zero, Vector3.Zero, Vector3.One)
         {
 
         }
 
-        public AModel(Vector3 position, Vector3 rotation, Vector3 scaling)
+        public AModel(ShaderProgram program, Vector3 position, Vector3 rotation, Vector3 scaling)
         {
-            ID = TOTAL_IDS++;
+            ID = TotalID++;
+            Program = program;
             Position = position;
             Rotation = rotation;
             Scaling = scaling;
@@ -41,9 +46,9 @@ namespace Polymono.Graphics {
             OriginScaling = scaling;
         }
 
-        public abstract void CreateBuffer(ShaderProgram program);
+        public abstract void CreateBuffer();
 
-        public abstract void Render(ShaderProgram program);
+        public abstract void Render();
 
         public abstract void Delete();
 
@@ -53,7 +58,8 @@ namespace Polymono.Graphics {
             try
             {
                 bitmap = new Bitmap(path);
-            } catch (FileNotFoundException e)
+            }
+            catch (FileNotFoundException e)
             {
                 Polymono.Debug($"Cannot find {path}: {e}");
                 return -1;
@@ -78,7 +84,8 @@ namespace Polymono.Graphics {
             {
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)All.Repeat);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)All.Repeat);
-            } else
+            }
+            else
             {
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapS, (int)All.ClampToEdge);
                 GL.TexParameter(TextureTarget.Texture2D, TextureParameterName.TextureWrapT, (int)All.ClampToEdge);

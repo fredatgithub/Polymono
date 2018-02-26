@@ -12,7 +12,7 @@ namespace Polymono.Game {
     class Board : GameObject {
         public Property[] Property;
 
-        public Board()
+        public Board(ShaderProgram program)
         {
             // Set vertices.
             List<Vertex> vertices = new List<Vertex> {
@@ -29,7 +29,7 @@ namespace Polymono.Game {
 
             float scaleFactor = 5.0f;
 
-            Model = new Model(vertices, indices,
+            Model = new Model(program, vertices, indices,
                 Vector3.Zero, new Vector3(GameClient.ToRadians(-90.0f), 0.0f, 0.0f), new Vector3(scaleFactor),
                     @"Resources\Textures\polymono.png");
             Property = new Property[40];

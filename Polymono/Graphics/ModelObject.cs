@@ -19,8 +19,8 @@ namespace Polymono.Graphics
         // Textures
         public Dictionary<string, int> Textures;
 
-        public ModelObject(string filename, bool giveID)
-            : base(giveID)
+        public ModelObject(ShaderProgram program, string filename, bool giveID)
+            : base(program)
         {
             Faces = new List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>>();
             Vertices = new ObjectVertex[0];
@@ -28,31 +28,31 @@ namespace Polymono.Graphics
             LoadFromFile(filename, Color4.White);
         }
 
-        public ModelObject(string filename,
+        public ModelObject(ShaderProgram program, string filename,
             string textureLocation = @"Resources\Textures\opentksquare.png",
             string materialLocation = @"Resources\Objects\opentksquare.mtl",
             string materialName = @"opentk1") :
-            this(filename, Color4.White, Vector3.Zero, Vector3.Zero, Vector3.One, textureLocation, materialLocation, materialName)
+            this(program, filename, Color4.White, Vector3.Zero, Vector3.Zero, Vector3.One, textureLocation, materialLocation, materialName)
         {
 
         }
 
-        public ModelObject(string filename,
+        public ModelObject(ShaderProgram program, string filename,
             Vector3 position, Vector3 rotation, Vector3 scaling,
             string textureLocation = @"Resources\Textures\opentksquare.png",
             string materialLocation = @"Resources\Objects\opentksquare.mtl",
             string materialName = @"opentk1") :
-            this(filename, Color4.White, position, rotation, scaling, textureLocation, materialLocation, materialName)
+            this(program, filename, Color4.White, position, rotation, scaling, textureLocation, materialLocation, materialName)
         {
 
         }
 
-        public ModelObject(string filename, Color4 colour,
+        public ModelObject(ShaderProgram program, string filename, Color4 colour,
             Vector3 position, Vector3 rotation, Vector3 scaling,
             string textureLocation = @"Resources\Textures\opentksquare.png",
             string materialLocation = @"Resources\Objects\opentksquare.mtl",
             string materialName = @"opentk1") :
-            base(position, rotation, scaling)
+            base(program, position, rotation, scaling)
         {
             Faces = new List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>>();
             Vertices = new ObjectVertex[0];
@@ -64,11 +64,11 @@ namespace Polymono.Graphics
             TextureID = CreateTexture(textureLocation);
         }
 
-        public ModelObject(string filename, Color4 colour,
+        public ModelObject(ShaderProgram program, string filename, Color4 colour,
             Vector3 position, Vector3 rotation, Vector3 scaling,
             string materialLocation = @"Resources\Objects\opentksquare.mtl",
             string materialName = @"opentk1") :
-            base(position, rotation, scaling)
+            base(program, position, rotation, scaling)
         {
             Faces = new List<Tuple<ObjectVertex, ObjectVertex, ObjectVertex>>();
             Vertices = new ObjectVertex[0];
@@ -78,20 +78,20 @@ namespace Polymono.Graphics
             Material = CreateMaterial(materialLocation, materialName);
         }
 
-        public override void CreateBuffer(ShaderProgram program)
+        public override void CreateBuffer()
         {
             VAO = GL.GenVertexArray();
             VBO = GL.GenBuffer();
             // Bind VAO then VBO for data inputs.
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-            int vPosition = program.GetAttrib("vPosition");
-            int vNormal = program.GetAttrib("vNormal");
-            int vColour = program.GetAttrib("vColour");
-            int vTexture = program.GetAttrib("vTexture");
+            int vPosition = Program.GetAttrib("vPosition");
+            int vNormal = Program.GetAttrib("vNormal");
+            int vColour = Program.GetAttrib("vColour");
+            int vTexture = Program.GetAttrib("vTexture");
             if (GameClient.MajorVersion == '4' && GameClient.MinorVersion < '5')
             {
-                Polymono.Debug("Below 4.5 version.");
+                #region Low version
                 // Input data to buffer.
                 GL.BufferData(BufferTarget.ArrayBuffer, Vertices.Length * ObjectVertex.Size,
                     Vertices, BufferUsageHint.StaticDraw);
@@ -124,10 +124,11 @@ namespace Polymono.Graphics
                     GL.VertexAttribPointer(vTexture, 2, VertexAttribPointerType.Float, false,
                         ObjectVertex.Size, (3 + 3 + 4) * sizeof(float));
                 }
+                #endregion
             }
             else
             {
-                Polymono.Debug("Above 4.5 version.");
+                #region High version
                 // Input data to buffer.
                 GL.NamedBufferStorage(VBO, ObjectVertex.Size * Vertices.Length, Vertices, BufferStorageFlags.MapWriteBit);
                 // Set vertex attribute pointers.
@@ -165,25 +166,26 @@ namespace Polymono.Graphics
                 }
                 // Link
                 GL.VertexArrayVertexBuffer(VAO, 0, VBO, IntPtr.Zero, ObjectVertex.Size);
+                #endregion
             }
             // Reset bindings.
             GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
             GL.BindVertexArray(0);
         }
 
-        public override void Render(ShaderProgram program)
+        public override void Render()
         {
             GL.BindVertexArray(VAO);
             GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
             GL.BindTexture(TextureTarget.Texture2D, TextureID);
-            program.UniformMatrix4("model", ref ModelMatrix);
+            Program.UniformMatrix4("model", ref ModelMatrix);
             // Draw uniforms if material mapping is enabled.
-            if (Material != null && program.ProgramName == "Dice")
+            if (Material != null && Program.ProgramName == "Dice")
             {
-                program.Uniform3("material_ambient", ref Material.AmbientColour);
-                program.Uniform3("material_diffuse", ref Material.DiffuseColour);
-                program.Uniform3("material_specular", ref Material.SpecularColour);
-                program.Uniform1("material_specExponent", Material.SpecularExponent);
+                Program.Uniform3("material_ambient", ref Material.AmbientColour);
+                Program.Uniform3("material_diffuse", ref Material.DiffuseColour);
+                Program.Uniform3("material_specular", ref Material.SpecularColour);
+                Program.Uniform1("material_specExponent", Material.SpecularExponent);
             }
             // Draw arrays...
             GL.DrawArrays(PrimitiveType.Triangles, 0, Vertices.Length);

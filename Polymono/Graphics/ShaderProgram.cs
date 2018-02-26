@@ -40,7 +40,7 @@ namespace Polymono.Graphics
             }
             else
             {
-                Console.WriteLine($"Program [{ProgramID}]: Uniform1 could not be set. [{uniformName}] does not exist.");
+                Polymono.Debug($"Program [{ProgramID}]: Uniform1 could not be set. [{uniformName}] does not exist.");
             }
         }
 
@@ -53,7 +53,7 @@ namespace Polymono.Graphics
             }
             else
             {
-                Console.WriteLine($"Program [{ProgramID}]: Uniform3 could not be set. [{uniformName}] does not exist.");
+                Polymono.Debug($"Program [{ProgramID}]: Uniform3 could not be set. [{uniformName}] does not exist.");
             }
         }
 
@@ -66,7 +66,7 @@ namespace Polymono.Graphics
             }
             else
             {
-                Console.WriteLine($"Program [{ProgramID}]: UniformMatrix4 could not be set. [{uniformName}] does not exist.");
+                Polymono.Debug($"Program [{ProgramID}]: UniformMatrix4 could not be set. [{uniformName}] does not exist.");
             }
         }
 

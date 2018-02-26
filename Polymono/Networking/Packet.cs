@@ -5,8 +5,18 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Networking {
-    class Packet {
+namespace Polymono.Networking
+{
+    enum PacketType
+    {
+        Null,
+        Connect,
+        Disconnect,
+        Message,
+    }
+
+    class Packet
+    {
         // Data buffers.
         public PacketType Type;
         public int TargetID;
@@ -63,7 +73,8 @@ namespace Polymono.Networking {
                 Polymono.Debug($"Terminator bytes: {terminatorBytes}");
                 Polymono.Debug($"Byte buffer: {PrintByteArray(ByteBuffer)}");
                 Polymono.Debug("-------------------------------END ENCODE---------------------------------");
-            } else
+            }
+            else
             {
                 Polymono.Print(ConsoleLevel.Warning, "Attempting to encode a packet with no data buffer.");
             }
@@ -90,7 +101,8 @@ namespace Polymono.Networking {
                 Polymono.Debug($"Terminate: {Terminate}");
                 Polymono.Debug($"DataBuffer: {DataBuffer}");
                 Polymono.Debug("-------------------------------END DECODE---------------------------------");
-            } else
+            }
+            else
             {
                 Polymono.Print(ConsoleLevel.Warning, "Attempting to encode a packet with no byte buffer.");
             }
@@ -105,12 +117,5 @@ namespace Polymono.Networking {
             }
             return sb.ToString().Trim();
         }
-    }
-
-    enum PacketType {
-        Null,
-        Connect,
-        Disconnect,
-        Message,
     }
 }

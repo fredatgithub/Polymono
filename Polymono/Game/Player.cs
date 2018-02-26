@@ -12,12 +12,13 @@ namespace Polymono.Game {
         public static int TOTAL_PLAYER_IDS = 0;
         public int PlayerID;
 
-        public Player(Board board)
+        public Player(ShaderProgram program, Board board)
         {
             PlayerID = TOTAL_PLAYER_IDS++;
             Vector3 offset = board.Property[0].BoardLocationOffset;
             offset.X += (PlayerID / 5f);
             Model = new ModelObject(
+                program,
                 @"Resources\Objects\player.obj",
                 GetPlayerColour(PlayerID),
                 new Vector3(offset),

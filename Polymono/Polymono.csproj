@@ -105,6 +105,7 @@
     <Compile Include="Game\Dice.cs" />
     <Compile Include="Game\GameObject.cs" />
     <Compile Include="Game\GameState.cs" />
+    <Compile Include="Graphics\Button.cs" />
     <Compile Include="Graphics\Camera.cs" />
     <Compile Include="GameClient.cs" />
     <Compile Include="Graphics\AModel.cs" />
@@ -127,6 +128,9 @@
     <Compile Include="Vertices\Vertex.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Content Include="Resources\Textures\cubedie.png">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Textures\default.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Textures\cube_textured_uv.png">
@@ -213,6 +217,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Graphics\fs_skybox.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Graphics\vs_button.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Graphics\fs_button.glsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

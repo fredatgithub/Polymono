@@ -22,7 +22,7 @@ using System.Threading.Tasks;
 
 namespace Polymono {
     public enum ProgramID {
-        Default, Textured, Coloured, Full, Dice, Player, Skybox
+        Default, Textured, Coloured, Full, Dice, Player, Skybox, Button
     }
 
     class GameClient : GameWindow {
@@ -45,6 +45,7 @@ namespace Polymono {
         public Board Board;
         public Dice Dice;
         public Player[] Players;
+        public Button ButtonTest;
         // Light object
         Light activeLight = new Light(new Vector3(0.0f, 5.0f, 0.0f), new Vector3(1.0f, 1.0f, 1.0f));
         //Misc object
@@ -55,6 +56,8 @@ namespace Polymono {
 
         public double rTime = 0.0d;
         public double uTime = 0.0d;
+
+        public bool isTrackingCursor = false;
 
         public GameClient(int playerCount) : base(1280, 720, new GraphicsMode(32, 24, 0, 4))
         {
@@ -112,47 +115,41 @@ namespace Polymono {
                 }, (IntPtr)0);
 
             // Add shader programs.
-            Programs.Add(ProgramID.Default, new ShaderProgram("vs.glsl", "fs.glsl", "Default"));
-            Programs.Add(ProgramID.Textured, new ShaderProgram("vs_tex.glsl", "fs_tex.glsl", "Textured"));
-            Programs.Add(ProgramID.Coloured, new ShaderProgram("vs_col.glsl", "fs_col.glsl", "Coloured"));
-            Programs.Add(ProgramID.Full, new ShaderProgram("vs_full.glsl", "fs_full.glsl", "Full"));
-            Programs.Add(ProgramID.Dice, new ShaderProgram("vs_dice.glsl", "fs_dice.glsl", "Dice"));
-            Programs.Add(ProgramID.Player, new ShaderProgram("vs_player.glsl", "fs_player.glsl", "Player"));
-            Programs.Add(ProgramID.Skybox, new ShaderProgram("vs_skybox.glsl", "fs_skybox.glsl", "Skybox"));
-
-            Skybox = new Skybox(@"Resources\Objects\sphere.obj", false);
-            Skybox.CreateBuffer(Programs[ProgramID.Skybox]);
-
-            Board = new Board();
-
-            Dice = new Dice()
-            {
-                Model = new ModelObject(@"Resources\Objects\cube.obj",
-                    new Vector3(0.25f, 0.05f, 0.0f), Vector3.Zero, new Vector3(0.05f),
-                    @"Resources\Textures\cube_textured_uv.png",
-                    @"Resources\Objects\cube.mtl",
-                    @"Material")
-            };
-
+            Programs.Add(ProgramID.Default, 
+                new ShaderProgram("vs.glsl", "fs.glsl", "Default"));
+            Programs.Add(ProgramID.Textured, 
+                new ShaderProgram("vs_tex.glsl", "fs_tex.glsl", "Textured"));
+            Programs.Add(ProgramID.Coloured, 
+                new ShaderProgram("vs_col.glsl", "fs_col.glsl", "Coloured"));
+            Programs.Add(ProgramID.Full, 
+                new ShaderProgram("vs_full.glsl", "fs_full.glsl", "Full"));
+            Programs.Add(ProgramID.Dice, 
+                new ShaderProgram("vs_dice.glsl", "fs_dice.glsl", "Dice"));
+            Programs.Add(ProgramID.Player, 
+                new ShaderProgram("vs_player.glsl", "fs_player.glsl", "Player"));
+            Programs.Add(ProgramID.Skybox, 
+                new ShaderProgram("vs_skybox.glsl", "fs_skybox.glsl", "Skybox"));
+            Programs.Add(ProgramID.Button, 
+                new ShaderProgram("vs_button.glsl", "fs_button.glsl", "Button"));
+            // Skybox
+            Skybox = new Skybox(Programs[ProgramID.Skybox], @"Resources\Objects\sphere.obj", false);
+            Skybox.CreateBuffer();
+            // Board
+            Board = new Board(Programs[ProgramID.Full]);
+            Board.Model.CreateBuffer();
+            Models.Add(Board.Model.ID, Board.Model);
+            // Dice
+            Dice = new Dice(Programs[ProgramID.Dice]);
+            Dice.Model.CreateBuffer();
+            Models.Add(Dice.Model.ID, Dice.Model);
+            // Players
             for (int i = 0; i < State.PlayerCount; i++)
             {
-                Players[i] = new Player(Board);
+                Players[i] = new Player(Programs[ProgramID.Player], Board);
+                Players[i].Model.CreateBuffer();
+                Models.Add(Players[i].Model.ID, Players[i].Model);
             }
-
-            Board.Model.CreateBuffer(Programs[ProgramID.Full]);
-            Dice.Model.CreateBuffer(Programs[ProgramID.Dice]);
-            foreach (var player in Players)
-            {
-                player.Model.CreateBuffer(Programs[ProgramID.Player]);
-            }
-
-            Models.Add(Board.Model.ID, Board.Model);
-            Models.Add(Dice.Model.ID, Dice.Model);
-            foreach (var player in Players)
-            {
-                Models.Add(player.Model.ID, player.Model);
-            }
-
+            // Text
             _drawing = new QFontDrawing();
             var builderConfig = new QFontBuilderConfiguration(true)
             {
@@ -166,6 +163,10 @@ namespace Polymono {
                 Characters = CharacterSet.General | CharacterSet.Japanese | CharacterSet.Thai | CharacterSet.Cyrillic
             };
             _mainText = new QFont(@"Fonts\times.ttf", 24, builderConfig);
+            // Button
+            ButtonTest = new Button(Programs[ProgramID.Button], "Button1", 128, Height - 128, 64, -64, () => { Polymono.Debug("Callback from button executed."); });
+            ButtonTest.CreateBuffer();
+            Models.Add(ButtonTest.ID, ButtonTest);
         }
 
         protected override void OnUpdateFrame(FrameEventArgs e)
@@ -213,12 +214,12 @@ namespace Polymono {
             Programs[ProgramID.Skybox].UniformMatrix4("projection", ref ProjectionMatrix);
             Programs[ProgramID.Skybox].UniformMatrix4("view", ref StaticViewMatrix);
             Programs[ProgramID.Skybox].Uniform1("time", (float)rTime);
-            Skybox.Render(Programs[ProgramID.Skybox]);
+            Skybox.Render();
             //// Basic renderer.
             Programs[ProgramID.Full].UseProgram();
             Programs[ProgramID.Full].UniformMatrix4("projection", ref ProjectionMatrix);
             Programs[ProgramID.Full].UniformMatrix4("view", ref ViewMatrix);
-            Board.Model.Render(Programs[ProgramID.Full]);
+            Board.Model.Render();
             // Dice renderer.
             Programs[ProgramID.Dice].UseProgram();
             Programs[ProgramID.Dice].Uniform3("light_position", ref activeLight.Position);
@@ -228,15 +229,19 @@ namespace Polymono {
             Programs[ProgramID.Dice].UniformMatrix4("projection", ref ProjectionMatrix);
             Programs[ProgramID.Dice].UniformMatrix4("view", ref ViewMatrix);
             Programs[ProgramID.Dice].Uniform1("time", (float)rTime);
-            Dice.Model.Render(Programs[ProgramID.Dice]);
+            Dice.Model.Render();
             // Player renderer.
             Programs[ProgramID.Player].UseProgram();
             foreach (var player in Players)
             {
                 Programs[ProgramID.Player].UniformMatrix4("projection", ref ProjectionMatrix);
                 Programs[ProgramID.Player].UniformMatrix4("view", ref ViewMatrix);
-                player.Model.Render(Programs[ProgramID.Player]);
+                player.Model.Render();
             }
+            // Button renderer
+            Programs[ProgramID.Button].UseProgram();
+            Programs[ProgramID.Button].UniformMatrix4("projection", ref UIProjectionMatrix);
+            ButtonTest.Render();
             // Text renderer.
             _drawing.ProjectionMatrix = UIProjectionMatrix;
             _drawing.DrawingPrimitives.Clear();
@@ -265,10 +270,7 @@ namespace Polymono {
 
         protected override void OnFocusedChanged(EventArgs e)
         {
-            if (Focused)
-            {
-                ResetMouse();
-            }
+            ResetMouse();
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -278,35 +280,31 @@ namespace Polymono {
 
         protected override void OnKeyPress(KeyPressEventArgs e)
         {
-            if (e.KeyChar == 'g')
-            {
-                ProcessNetwork();
-                ProcessNetwork();
-            }
+
         }
 
-        private void ProcessNetwork()
+        protected override void OnMouseDown(MouseButtonEventArgs e)
         {
-            Console.WriteLine("Performing network task...");
-            Polymono.Network.Send(PacketHandler.Create(PacketType.Message, "Hello, Katie."), IAsyncResult =>
+            if (e.Mouse.LeftButton == OpenTK.Input.ButtonState.Pressed)
             {
-                // Do resulting calculations.
-                Console.WriteLine("Network task returned.");
-                SocketState state = (SocketState)IAsyncResult.AsyncState;
-                Console.WriteLine("Test state ID: " + state.TestID);
-            });
-            Console.WriteLine("Network task processing...");
+                ButtonTest.Click(new Vector2(e.Mouse.X, e.Mouse.Y));
+            }   
         }
 
+        KeyboardState lastKeyboardState;
         int selectedObjectID = 0;
 
         protected void UpdateInput(double deltaTime)
         {
-            if (Focused)
+            KeyboardState keyState = Keyboard.GetState();
+            if (Focused && keyState.IsAnyKeyDown)
             {
-                KeyboardState keyState = Keyboard.GetState();
                 float deltaTimef = (float)deltaTime;
-                // Camera manipulation.
+                #region Camera manipulation.
+                if (IsUniquePress(keyState, Key.ControlLeft))
+                {
+                    isTrackingCursor = !isTrackingCursor;
+                }
                 if (keyState.IsKeyDown(Key.W))
                 {
                     Camera.ProcessKeyboard(CameraMovement.Forward, deltaTimef);
@@ -331,7 +329,8 @@ namespace Polymono {
                 {
                     Camera.ProcessKeyboard(CameraMovement.Down, deltaTimef);
                 }
-                // Object manipulation.
+                #endregion
+                #region Object manipulation.
                 // Selected object
                 if (keyState.IsKeyDown(Key.Number0))
                 {
@@ -421,16 +420,23 @@ namespace Polymono {
                     // Reset object
                     Models[selectedObjectID].ResetModel();
                 }
+                #endregion
                 if (keyState.IsKeyDown(Key.Escape))
                 {
                     Exit();
                 }
             }
+            lastKeyboardState = keyState;
+        }
+
+        private bool IsUniquePress(KeyboardState state, Key key)
+        {
+            return (state.IsKeyDown(key) && !lastKeyboardState.IsKeyDown(key));
         }
 
         public void UpdateCamera()
         {
-            if (Focused)
+            if (Focused && isTrackingCursor)
             {
                 Vector2 delta = Camera.LastPosition - new Vector2(OpenTK.Input.Mouse.GetState().X, OpenTK.Input.Mouse.GetState().Y);
                 Camera.ProcessMouseMovement(delta.X, delta.Y);
