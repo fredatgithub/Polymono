@@ -89,7 +89,7 @@ namespace Polymono.Graphics
             int vNormal = Program.GetAttrib("vNormal");
             int vColour = Program.GetAttrib("vColour");
             int vTexture = Program.GetAttrib("vTexture");
-            if (GameClient.MajorVersion == '4' && GameClient.MinorVersion < '5')
+            if (AGameClient.MajorVersion == '4' && AGameClient.MinorVersion < '5')
             {
                 #region Low version
                 // Input data to buffer.
@@ -175,23 +175,26 @@ namespace Polymono.Graphics
 
         public override void Render()
         {
-            GL.BindVertexArray(VAO);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-            GL.BindTexture(TextureTarget.Texture2D, TextureID);
-            Program.UniformMatrix4("model", ref ModelMatrix);
-            // Draw uniforms if material mapping is enabled.
-            if (Material != null && Program.ProgramName == "Dice")
+            if (!IsHidden)
             {
-                Program.Uniform3("material_ambient", ref Material.AmbientColour);
-                Program.Uniform3("material_diffuse", ref Material.DiffuseColour);
-                Program.Uniform3("material_specular", ref Material.SpecularColour);
-                Program.Uniform1("material_specExponent", Material.SpecularExponent);
+                GL.BindVertexArray(VAO);
+                GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
+                GL.BindTexture(TextureTarget.Texture2D, TextureID);
+                Program.UniformMatrix4("model", ref ModelMatrix);
+                // Draw uniforms if material mapping is enabled.
+                if (Material != null && Program.ProgramName == "Dice")
+                {
+                    Program.Uniform3("material_ambient", ref Material.AmbientColour);
+                    Program.Uniform3("material_diffuse", ref Material.DiffuseColour);
+                    Program.Uniform3("material_specular", ref Material.SpecularColour);
+                    Program.Uniform1("material_specExponent", Material.SpecularExponent);
+                }
+                // Draw arrays...
+                GL.DrawArrays(PrimitiveType.Triangles, 0, Vertices.Length);
+                GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
+                GL.BindTexture(TextureTarget.Texture2D, 0);
+                GL.BindVertexArray(0);
             }
-            // Draw arrays...
-            GL.DrawArrays(PrimitiveType.Triangles, 0, Vertices.Length);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, 0);
-            GL.BindTexture(TextureTarget.Texture2D, 0);
-            GL.BindVertexArray(0);
         }
 
         public override void Delete()
@@ -426,6 +429,11 @@ namespace Polymono.Graphics
                 return Material.Materials[materialName];
             }
             return null;
+        }
+
+        public override void Update()
+        {
+
         }
 
         class TempVertex

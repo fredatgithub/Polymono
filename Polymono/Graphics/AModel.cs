@@ -27,6 +27,8 @@ namespace Polymono.Graphics
         public Vector3 OriginPosition;
         public Vector3 OriginRotation;
         public Vector3 OriginScaling;
+        // State
+        public bool IsHidden { get; set; }
 
         public AModel(ShaderProgram program)
             : this(program, Vector3.Zero, Vector3.Zero, Vector3.One)
@@ -47,6 +49,8 @@ namespace Polymono.Graphics
         }
 
         public abstract void CreateBuffer();
+
+        public abstract void Update();
 
         public abstract void Render();
 
@@ -105,6 +109,11 @@ namespace Polymono.Graphics
             Position += translation;
         }
 
+        public void SetTranslate(Vector3 translation)
+        {
+            Position = translation;
+        }
+
         public void Rotate(Vector3 rotation)
         {
             Rotation += rotation;
@@ -130,6 +139,16 @@ namespace Polymono.Graphics
                 Matrix4.CreateRotationY(Rotation.Y) *
                 Matrix4.CreateRotationZ(Rotation.Z) *
                 Matrix4.CreateTranslation(Position);
+        }
+
+        public void Show()
+        {
+            IsHidden = false;
+        }
+
+        public void Hide()
+        {
+            IsHidden = true;
         }
     }
 }

@@ -1,6 +1,5 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
-using OpenTK.Graphics.OpenGL4;
 using Polymono.Vertices;
 using QuickFont;
 using QuickFont.Configuration;
@@ -13,43 +12,34 @@ using System.Threading.Tasks;
 
 namespace Polymono.Graphics
 {
-    public enum LayoutAlign
-    {
-        TopRight,
-        TopLeft,
-        BottomRight,
-        BottomLeft
-    }
-
-    public enum ButtonState
-    {
-        Pressing,
-        Pressed,
-        Hovering,
-        NotPressed,
-        Hidden
-    }
-
-    class Button : Model
+    class Label : Model
     {
         // Positional data
-        public int X, Y, Width, Height;
+        public int Width, Height;
         public int WindowWidth, WindowHeight;
         public LayoutAlign LayoutAlign;
-        // Button data
-        public ButtonState State;
-        public Func<Task> ExecDelegate;
         // Text data
-        public string Text;
+        private string _text = "";
+        public string Text {
+            get { return _text; }
+            set {
+                if (_text != value)
+                {
+                    _text = value;
+                    UpdateText = true;
+                }
+            }
+        }
+        public bool UpdateText = false;
         // Font data
         public QFont LabelFont;
         public QFontDrawing LabelDrawing;
         // Matrices
         public Matrix4 ProjectionMatrix;
 
-        public Button(ShaderProgram program, string text, Color4 colour,
+        public Label(ShaderProgram program, string text, Color4 colour,
             int x, int y, int width, int height, int windowWidth, int windowHeight,
-            Matrix4 projection, Func<Task> execDelegate,
+            Matrix4 projection,
             LayoutAlign layoutAlign = LayoutAlign.TopRight, string fontLocation = "arial")
             : base(program)
         {
@@ -59,32 +49,27 @@ namespace Polymono.Graphics
             switch (LayoutAlign)
             {
                 case LayoutAlign.TopRight:
-                    X = x;
-                    Y = WindowHeight - y;
+                    Position = new Vector3(x, y, 0.0f);
                     Width = width;
                     Height = -height;
                     break;
                 case LayoutAlign.TopLeft:
-                    X = WindowWidth - x;
-                    Y = WindowHeight - y;
+                    Position = new Vector3(WindowWidth - x, WindowHeight - y, 0.0f);
                     Width = width;
                     Height = -height;
                     break;
                 case LayoutAlign.BottomRight:
-                    X = x;
-                    Y = y;
+                    Position = new Vector3(x, y, 0.0f);
                     Width = width;
                     Height = -height;
                     break;
                 case LayoutAlign.BottomLeft:
-                    X = WindowWidth - x;
-                    Y = y;
+                    Position = new Vector3(WindowWidth - x, y, 0.0f);
                     Width = width;
                     Height = -height;
                     break;
                 default:
-                    X = x;
-                    Y = y;
+                    Position = new Vector3(x, y, 0.0f);
                     Width = width;
                     Height = height;
                     break;
@@ -92,19 +77,19 @@ namespace Polymono.Graphics
             // Create model, then populate button positional data to that model data.
             Vertices = new Vertex[] {
                 new Vertex(// Top left
-                    new Vector3(X, Y, 0.0f),
+                    new Vector3(0.0f, 0.0f, 0.0f),
                     colour,
                     new Vector2(0.0f, 0.0f)),
                 new Vertex(// Top right
-                    new Vector3(X + Width, Y, 0.0f),
+                    new Vector3(Width, 0.0f, 0.0f),
                     colour,
                     new Vector2(1.0f, 0.0f)),
                 new Vertex(// Bottom right
-                    new Vector3(X + Width, Y + Height, 0.0f),
+                    new Vector3(Width, Height, 0.0f),
                     colour,
                     new Vector2(1.0f, 1.0f)),
                 new Vertex(// Bottom left
-                    new Vector3(X, Y + Height, 0.0f),
+                    new Vector3(0.0f, Height, 0.0f),
                     colour,
                     new Vector2(0.0f, 1.0f))
             };
@@ -113,11 +98,11 @@ namespace Polymono.Graphics
                 0, 1, 2,
                 0, 3, 2
             };
+            // Text update
             Text = text;
-            State = ButtonState.NotPressed;
+            // Matrix update
             ProjectionMatrix = projection;
-            ExecDelegate = execDelegate;
-            // Configure text
+            // Configure text.
             LabelDrawing = new QFontDrawing();
             var builderConfig = new QFontBuilderConfiguration(true)
             {
@@ -130,65 +115,29 @@ namespace Polymono.Graphics
                 TextGenerationRenderHint = TextGenerationRenderHint.ClearTypeGridFit,
                 Characters = CharacterSet.General | CharacterSet.Japanese | CharacterSet.Thai | CharacterSet.Cyrillic
             };
-            LabelFont = new QFont(@"Resources\Fonts\" + fontLocation + ".ttf", 12, builderConfig);
+            LabelFont = new QFont(@"Resources\Fonts\" + fontLocation + ".ttf", 8, builderConfig);
             // Buffer text.
             LabelDrawing.DrawingPrimitives.Clear();
-            LabelDrawing.Print(LabelFont, Text,
-                new Vector3(X + (Width / 2), Y, 0.0f),
-                new SizeF(Width, Height), QFontAlignment.Centre, new QFontRenderOptions()
-                {
-                    WordWrap = false
-                });
+            LabelDrawing.Print(LabelFont, Text, new Vector3(
+                Position.X + (Width / 2), Position.Y, 1.0f), QFontAlignment.Centre);
             LabelDrawing.RefreshBuffers();
         }
 
-        public async void Click(Vector2 mousePosition)
+        public override void Update()
         {
-            switch (LayoutAlign)
+            if (UpdateText)
             {
-                case LayoutAlign.TopRight:
-                    mousePosition.Y = WindowHeight - mousePosition.Y;
-                    break;
-                case LayoutAlign.TopLeft:
-                    mousePosition.X = WindowWidth - mousePosition.X;
-                    mousePosition.Y = WindowHeight - mousePosition.Y;
-                    break;
-                case LayoutAlign.BottomRight:
-                    break;
-                case LayoutAlign.BottomLeft:
-                    mousePosition.X = WindowWidth - mousePosition.X;
-                    break;
-                default:
-                    break;
+                LabelDrawing.DrawingPrimitives.Clear();
+                LabelDrawing.Print(LabelFont, Text, new Vector3(
+                    Position.X + (Width / 2), Position.Y, 1.0f), QFontAlignment.Centre);
+                LabelDrawing.RefreshBuffers();
+                UpdateText = false;
             }
-            bool isHovering = PointInRectangle(Vertices[0].Position.Xy, Vertices[1].Position.Xy,
-                Vertices[2].Position.Xy, Vertices[3].Position.Xy, mousePosition);
-            if (isHovering && State == ButtonState.NotPressed)
-            {
-                State = ButtonState.Pressed;
-                await ExecDelegate();
-                State = ButtonState.NotPressed;
-            }
-        }
-
-        private bool PointInRectangle(Vector2 pos1, Vector2 pos2,
-            Vector2 pos3, Vector2 pos4, Vector2 posMouse)
-        {
-            return IsRight(pos1, pos2, posMouse)
-                && IsRight(pos2, pos3, posMouse)
-                && IsRight(pos3, pos4, posMouse)
-                && IsRight(pos4, pos1, posMouse);
-        }
-
-        private bool IsRight(Vector2 pos1, Vector2 pos2, Vector2 posMouse)
-        {
-            return ((pos2.X - pos1.X) * (posMouse.Y - pos1.Y)
-                - (pos2.Y - pos1.Y) * (posMouse.X - pos1.X)) < 0;
         }
 
         public override void Render()
         {
-            if (!IsHidden && State != ButtonState.Hidden)
+            if (!IsHidden)
             {
                 base.Render();
                 LabelDrawing.ProjectionMatrix = ProjectionMatrix;

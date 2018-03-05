@@ -31,7 +31,7 @@ namespace Polymono.Networking
                 GlobalEndPoint = new Socket(localEP.AddressFamily, SocketType.Stream, ProtocolType.Tcp);
                 GlobalEndPoint.Bind(localEP);
                 GlobalEndPoint.Listen(16);
-                Polymono.Debug($"Server started on {GlobalEndPoint.LocalEndPoint}");
+                Polymono.Print($"Server started on {GlobalEndPoint.LocalEndPoint}");
                 // Start receiving.
                 GlobalEndPoint.BeginAccept(new AsyncCallback(AcceptCallback), null);
             }

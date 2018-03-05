@@ -5,132 +5,69 @@ using OpenTK.Input;
 using Polymono.Game;
 using Polymono.Graphics;
 using Polymono.Networking;
-using Polymono.Vertices;
-using QuickFont;
-using QuickFont.Configuration;
 using System;
 using System.Collections.Generic;
-using System.Diagnostics;
-using System.Drawing;
-using System.Drawing.Imaging;
-using System.IO;
-using System.Linq;
-using System.Runtime.InteropServices;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 
-namespace Polymono {
-    public enum ProgramID {
-        Default, Textured, Coloured, Full, Dice, Player, Skybox, Button
-    }
-
-    class GameClient : GameWindow {
-        public static bool FatalError = false;
-        public static bool StopForErrors = true;
-        public static int MajorVersion = 0;
-        public static int MinorVersion = 0;
-        // Programs
-        public Dictionary<ProgramID, ShaderProgram> Programs;
-        // Models
-        public Dictionary<int, AModel> Models;
-        // Matrices
-        public Matrix4 ViewMatrix;
-        public Matrix4 StaticViewMatrix;
-        public Matrix4 ProjectionMatrix;
-        public Matrix4 UIProjectionMatrix;
+namespace Polymono
+{
+    class GameClient : AGameClient
+    {
         // Game objects
         public GameState State;
         public Camera Camera;
         public Board Board;
         public Dice Dice;
         public Player[] Players;
+        // Buttons
         public Button ButtonTest;
-        // Light object
-        Light activeLight = new Light(new Vector3(0.0f, 5.0f, 0.0f), new Vector3(1.0f, 1.0f, 1.0f));
+        public Button ButtonCreateServer;
+        public Button ButtonClientJoin;
+        public Button ButtonSendMessage;
+        public Button ButtonExit;
+        public Label LabelTest;
+        public TextBox TextBoxTest;
         //Misc object
         public Skybox Skybox;
-        // Text
-        public QFont _mainText;
-        public QFontDrawing _drawing;
+        public Light ActiveLight = new Light(new Vector3(0.0f, 5.0f, 0.0f), new Vector3(1.0f, 1.0f, 1.0f));
 
-        public double rTime = 0.0d;
-        public double uTime = 0.0d;
-
-        public bool isTrackingCursor = false;
-
-        public GameClient(int playerCount) : base(1280, 720, new GraphicsMode(32, 24, 0, 4))
-        {
-            Polymono.Print(ConsoleLevel.Debug, $"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
-            Polymono.Print(ConsoleLevel.Debug, $"OpenGL Extensions: {GL.GetString(StringName.Extensions)}");
-            Polymono.Print(ConsoleLevel.Debug, $"OpenGL Shader Language: {GL.GetString(StringName.ShadingLanguageVersion)}");
-            Polymono.Print(ConsoleLevel.Debug, $"OpenGL Vendor: {GL.GetString(StringName.Vendor)}");
-            Polymono.Print($"OpenGL version: {GL.GetString(StringName.Version)}");
-            Polymono.Print($"Windows OS: {Environment.OSVersion}");
-            Polymono.Print($"CLR version: {Environment.Version}");
-
-            string version = GL.GetString(StringName.Version);
-            MajorVersion = version[0];
-            MinorVersion = version[2];
-            if (MajorVersion < 3)
-            {
-                Polymono.ErrorF("Fatal error: OpenGL version 3 required.");
-                Console.ReadLine();
-                Exit();
+        private Server _server;
+        private Client _client;
+        public INetwork Network {
+            get {
+                if (_isServer)
+                {
+                    return _server;
+                }
+                else
+                {
+                    return _client;
+                }
             }
+            set {
+                if (value is Server)
+                {
+                    _server = (Server)value;
+                    _isServer = true;
+                }
+                if (value is Client)
+                {
+                    _client = (Client)value;
+                    _isServer = false;
+                }
+            }
+        }
+        private bool _isServer = false;
+
+        public GameClient(int playerCount) : base()
+        {
             State = new GameState(playerCount);
-            Programs = new Dictionary<ProgramID, ShaderProgram>();
-            Models = new Dictionary<int, AModel>();
-            Camera = new Camera(new Vector3(0.0f, 2.0f, 0.0f));
+            Camera = new Camera(new Vector3(0.0f, 1.0f, 0.0f));
             Players = new Player[playerCount];
         }
 
-        protected override void OnLoad(EventArgs e)
+        protected override void LoadObjects()
         {
-            // Enable OpenGL settings.
-            GL.Enable(EnableCap.DepthTest);
-            GL.Enable(EnableCap.DebugOutput);
-            GL.Enable(EnableCap.DebugOutputSynchronous);
-            GL.DebugMessageCallback((DebugSource source, DebugType type, int id,
-                DebugSeverity severity, int length, IntPtr message, IntPtr userParam) => {
-                    switch (type)
-                    {
-                        case DebugType.DebugTypeError:
-                            Polymono.Error($"OpenGL error ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
-                            Polymono.ErrorF(Environment.StackTrace);
-                            FatalError = true;
-                            break;
-                        case DebugType.DebugTypeDeprecatedBehavior:
-                        case DebugType.DebugTypeUndefinedBehavior:
-                        case DebugType.DebugTypePortability:
-                        case DebugType.DebugTypePerformance:
-                        case DebugType.DebugTypeOther:
-                        case DebugType.DebugTypeMarker:
-                        case DebugType.DebugTypePushGroup:
-                        case DebugType.DebugTypePopGroup:
-                        default:
-                            Polymono.Debug($"OpenGL debug message.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
-                            break;
-                    }
-                }, (IntPtr)0);
-
-            // Add shader programs.
-            Programs.Add(ProgramID.Default, 
-                new ShaderProgram("vs.glsl", "fs.glsl", "Default"));
-            Programs.Add(ProgramID.Textured, 
-                new ShaderProgram("vs_tex.glsl", "fs_tex.glsl", "Textured"));
-            Programs.Add(ProgramID.Coloured, 
-                new ShaderProgram("vs_col.glsl", "fs_col.glsl", "Coloured"));
-            Programs.Add(ProgramID.Full, 
-                new ShaderProgram("vs_full.glsl", "fs_full.glsl", "Full"));
-            Programs.Add(ProgramID.Dice, 
-                new ShaderProgram("vs_dice.glsl", "fs_dice.glsl", "Dice"));
-            Programs.Add(ProgramID.Player, 
-                new ShaderProgram("vs_player.glsl", "fs_player.glsl", "Player"));
-            Programs.Add(ProgramID.Skybox, 
-                new ShaderProgram("vs_skybox.glsl", "fs_skybox.glsl", "Skybox"));
-            Programs.Add(ProgramID.Button, 
-                new ShaderProgram("vs_button.glsl", "fs_button.glsl", "Button"));
             // Skybox
             Skybox = new Skybox(Programs[ProgramID.Skybox], @"Resources\Objects\sphere.obj", false);
             Skybox.CreateBuffer();
@@ -149,49 +86,67 @@ namespace Polymono {
                 Players[i].Model.CreateBuffer();
                 Models.Add(Players[i].Model.ID, Players[i].Model);
             }
-            // Text
-            _drawing = new QFontDrawing();
-            var builderConfig = new QFontBuilderConfiguration(true)
-            {
-                ShadowConfig =
-                {
-                    BlurRadius = 2,
-                    BlurPasses = 1,
-                    Type = ShadowType.Blurred
-                },
-                TextGenerationRenderHint = TextGenerationRenderHint.ClearTypeGridFit,
-                Characters = CharacterSet.General | CharacterSet.Japanese | CharacterSet.Thai | CharacterSet.Cyrillic
-            };
-            _mainText = new QFont(@"Fonts\times.ttf", 24, builderConfig);
             // Button
-            ButtonTest = new Button(Programs[ProgramID.Button], "Button1", 128, Height - 128, 64, -64, () => { Polymono.Debug("Callback from button executed."); });
+            ButtonTest = new Button(Programs[ProgramID.Button], "Test", new Color4(0.4f, 0.4f, 0.4f, 0.8f),
+                128, 128, 64, 32, Width, Height, UIProjectionMatrix,
+                async () =>
+                {
+                    Polymono.Print("Test function.");
+                    await Task.Delay(2000);
+                }, fontLocation: "arial_bold");
             ButtonTest.CreateBuffer();
             Models.Add(ButtonTest.ID, ButtonTest);
+            // Button Create Server.
+            ButtonCreateServer = new Button(Programs[ProgramID.Button], "Create server", new Color4(0.4f, 0.0f, 0.4f, 0.8f),
+                (Width / 2) - 64, 100, 128, 32, Width, Height, UIProjectionMatrix,
+                () =>
+                {
+                    Server server = new Server();
+                    server.Start(2222);
+                    Network = server;
+                    ButtonCreateServer.Hide();
+                    ButtonClientJoin.Hide();
+                    return Task.Delay(0);
+                }, fontLocation: "arial_bold");
+            ButtonCreateServer.CreateBuffer();
+            Models.Add(ButtonCreateServer.ID, ButtonCreateServer);
+            // Button Client Join.
+            ButtonClientJoin = new Button(Programs[ProgramID.Button], "Client join", new Color4(0.0f, 0.4f, 0.4f, 0.8f),
+                (Width / 2) - 64, 164, 128, 32, Width, Height, UIProjectionMatrix,
+                () =>
+                {
+                    Client client = new Client();
+                    client.Start(TextBoxTest.Text, 2222);
+                    Network = client;
+                    ButtonCreateServer.Hide();
+                    ButtonClientJoin.Hide();
+                    return Task.Delay(0);
+                }, fontLocation: "arial_bold");
+            ButtonClientJoin.CreateBuffer();
+            Models.Add(ButtonClientJoin.ID, ButtonClientJoin);
+            // Label
+            LabelTest = new Label(Programs[ProgramID.Label], "X:0 Y:0", new Color4(0.4f, 0.4f, 0.4f, 0.8f),
+                0, 0, 74, 16, Width, Height, UIProjectionMatrix, fontLocation: "arial_bold");
+            LabelTest.CreateBuffer();
+            Models.Add(LabelTest.ID, LabelTest);
+            // Text box
+            TextBoxTest = new TextBox(Programs[ProgramID.Label], "", new Color4(0.4f, 0.4f, 0.4f, 0.8f),
+                (Width / 2) - 64, 212, 74, 16, Width, Height, UIProjectionMatrix);
+            TextBoxTest.CreateBuffer();
+            Models.Add(TextBoxTest.ID, TextBoxTest);
         }
 
-        protected override void OnUpdateFrame(FrameEventArgs e)
+        protected override void UpdateObjects()
         {
-            uTime += e.Time;
-            Title = $"Polymono | FPS: {1f / RenderPeriod:0} | TPS: {1f / UpdatePeriod:0}";
-            // Error handling.
-            if (FatalError && StopForErrors)
-            {
-                Console.WriteLine("Error occurred. Press ANY key to continue trying to run program.");
-                Console.ReadLine();
-                FatalError = false;
-                StopForErrors = false;
-            }
             // Update inputs and camera.
-            UpdateInput(e.Time);
+            UpdateInput(UTimeDelta);
             UpdateCamera();
-
             // Manage game state.
+            LabelTest.Text = $"X:{Mouse.X} Y:{Mouse.Y}";
+            LabelTest.SetTranslate(new Vector3(Mouse.X + 16, Height - Mouse.Y, 0.0f));
+            LabelTest.Update();
 
-
-            //Random random = new Random();
-            //Models[Dice.Model.ID].Rotate(new Vector3(0.001f, 0.0f, 0.0f));
-            //Polymono.DebugF($"{Models[Dice.Model.ID].Rotation}");
-
+            TextBoxTest.Update();
             // Update matrices.
             Skybox.UpdateModelMatrix();
             foreach (var model in Models.Values)
@@ -200,20 +155,27 @@ namespace Polymono {
             }
             ViewMatrix = Camera.GetViewMatrix();
             StaticViewMatrix = Camera.GetStaticViewMatrix();
-            ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(ToRadians(Camera.Zoom), (float)Width / Height, 0.1f, 1000f);
-            UIProjectionMatrix = Matrix4.CreateOrthographicOffCenter(ClientRectangle.X, ClientRectangle.Width, ClientRectangle.Y, ClientRectangle.Height, -1.0f, 1.0f);
+            ProjectionMatrix = Matrix4.CreatePerspectiveFieldOfView(ToRadians(Camera.Zoom),
+                (float)Width / Height,
+                0.1f, 1000f);
+            UIProjectionMatrix = Matrix4.CreateOrthographicOffCenter(
+                ClientRectangle.X, ClientRectangle.Width,
+                ClientRectangle.Y, ClientRectangle.Height,
+                -2.0f, 2.0f);
+            ButtonTest.ProjectionMatrix = UIProjectionMatrix;
+            ButtonCreateServer.ProjectionMatrix = UIProjectionMatrix;
+            ButtonClientJoin.ProjectionMatrix = UIProjectionMatrix;
+            LabelTest.ProjectionMatrix = UIProjectionMatrix;
+            TextBoxTest.ProjectionMatrix = UIProjectionMatrix;
         }
 
-        protected override void OnRenderFrame(FrameEventArgs e)
+        protected override void RenderObjects()
         {
-            rTime += e.Time;
-            GL.ClearColor(Color.Aqua);
-            GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             // Skybox renderer.
             Programs[ProgramID.Skybox].UseProgram();
             Programs[ProgramID.Skybox].UniformMatrix4("projection", ref ProjectionMatrix);
             Programs[ProgramID.Skybox].UniformMatrix4("view", ref StaticViewMatrix);
-            Programs[ProgramID.Skybox].Uniform1("time", (float)rTime);
+            Programs[ProgramID.Skybox].Uniform1("time", (float)RTime);
             Skybox.Render();
             //// Basic renderer.
             Programs[ProgramID.Full].UseProgram();
@@ -222,13 +184,13 @@ namespace Polymono {
             Board.Model.Render();
             // Dice renderer.
             Programs[ProgramID.Dice].UseProgram();
-            Programs[ProgramID.Dice].Uniform3("light_position", ref activeLight.Position);
-            Programs[ProgramID.Dice].Uniform3("light_color", ref activeLight.Color);
-            Programs[ProgramID.Dice].Uniform1("light_ambientIntensity", activeLight.DiffuseIntensity);
-            Programs[ProgramID.Dice].Uniform1("light_diffuseIntensity", activeLight.AmbientIntensity);
+            Programs[ProgramID.Dice].Uniform3("light_position", ref ActiveLight.Position);
+            Programs[ProgramID.Dice].Uniform3("light_color", ref ActiveLight.Color);
+            Programs[ProgramID.Dice].Uniform1("light_ambientIntensity", ActiveLight.DiffuseIntensity);
+            Programs[ProgramID.Dice].Uniform1("light_diffuseIntensity", ActiveLight.AmbientIntensity);
             Programs[ProgramID.Dice].UniformMatrix4("projection", ref ProjectionMatrix);
             Programs[ProgramID.Dice].UniformMatrix4("view", ref ViewMatrix);
-            Programs[ProgramID.Dice].Uniform1("time", (float)rTime);
+            Programs[ProgramID.Dice].Uniform1("time", (float)RTime);
             Dice.Model.Render();
             // Player renderer.
             Programs[ProgramID.Player].UseProgram();
@@ -238,26 +200,32 @@ namespace Polymono {
                 Programs[ProgramID.Player].UniformMatrix4("view", ref ViewMatrix);
                 player.Model.Render();
             }
-            // Button renderer
-            Programs[ProgramID.Button].UseProgram();
-            Programs[ProgramID.Button].UniformMatrix4("projection", ref UIProjectionMatrix);
-            ButtonTest.Render();
-            // Text renderer.
-            _drawing.ProjectionMatrix = UIProjectionMatrix;
-            _drawing.DrawingPrimitives.Clear();
-            _drawing.Print(_mainText, "Hello", new Vector3(0, Height, 0), QFontAlignment.Left);
-            _drawing.Print(_mainText, "World", new Vector3(0, Height - 30, 0), QFontAlignment.Left);
-            _drawing.RefreshBuffers();
-            _drawing.Draw();
-            // Finalise state.
-            SwapBuffers();
         }
 
-        protected override void OnClosed(EventArgs e)
+        protected override void RenderUI()
         {
-            foreach (AModel model in Models.Values)
+            // Button renderer
+            Programs[ProgramID.Button].UseProgram();
+            Programs[ProgramID.Button].UniformMatrix4("projection", ref ButtonTest.ProjectionMatrix);
+            ButtonTest.Render();
+            // Button Create Server renderer
+            Programs[ProgramID.Button].UseProgram();
+            Programs[ProgramID.Button].UniformMatrix4("projection", ref ButtonCreateServer.ProjectionMatrix);
+            ButtonCreateServer.Render();
+            // Button Create Server renderer
+            Programs[ProgramID.Button].UseProgram();
+            Programs[ProgramID.Button].UniformMatrix4("projection", ref ButtonClientJoin.ProjectionMatrix);
+            ButtonClientJoin.Render();
+            // Button Create Server renderer
+            Programs[ProgramID.Label].UseProgram();
+            Programs[ProgramID.Label].UniformMatrix4("projection", ref TextBoxTest.ProjectionMatrix);
+            TextBoxTest.Render();
+            // Mouse position renderer
+            if (Focused && !isTrackingCursor)
             {
-                model.Delete();
+                Programs[ProgramID.Label].UseProgram();
+                Programs[ProgramID.Label].UniformMatrix4("projection", ref UIProjectionMatrix);
+                LabelTest.Render();
             }
         }
 
@@ -270,7 +238,19 @@ namespace Polymono {
 
         protected override void OnFocusedChanged(EventArgs e)
         {
-            ResetMouse();
+            if (Focused)
+            {
+                if (isTrackingCursor)
+                {
+                    ResetMouse();
+                    CursorVisible = false;
+                }
+                else
+                {
+                    CursorVisible = true;
+                }
+            }
+
         }
 
         protected override void OnMouseWheel(MouseWheelEventArgs e)
@@ -278,163 +258,15 @@ namespace Polymono {
             Camera.ProcessMouseScroll(e.DeltaPrecise);
         }
 
-        protected override void OnKeyPress(KeyPressEventArgs e)
-        {
-
-        }
-
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
-            if (e.Mouse.LeftButton == OpenTK.Input.ButtonState.Pressed)
-            {
-                ButtonTest.Click(new Vector2(e.Mouse.X, e.Mouse.Y));
-            }   
+            ButtonTest.Click(new Vector2(e.X, e.Y));
+            ButtonCreateServer.Click(new Vector2(e.X, e.Y));
+            ButtonClientJoin.Click(new Vector2(e.X, e.Y));
+            TextBoxTest.Click(new Vector2(e.X, e.Y));
         }
 
-        KeyboardState lastKeyboardState;
-        int selectedObjectID = 0;
-
-        protected void UpdateInput(double deltaTime)
-        {
-            KeyboardState keyState = Keyboard.GetState();
-            if (Focused && keyState.IsAnyKeyDown)
-            {
-                float deltaTimef = (float)deltaTime;
-                #region Camera manipulation.
-                if (IsUniquePress(keyState, Key.ControlLeft))
-                {
-                    isTrackingCursor = !isTrackingCursor;
-                }
-                if (keyState.IsKeyDown(Key.W))
-                {
-                    Camera.ProcessKeyboard(CameraMovement.Forward, deltaTimef);
-                }
-                if (keyState.IsKeyDown(Key.S))
-                {
-                    Camera.ProcessKeyboard(CameraMovement.Backward, deltaTimef);
-                }
-                if (keyState.IsKeyDown(Key.A))
-                {
-                    Camera.ProcessKeyboard(CameraMovement.Left, deltaTimef);
-                }
-                if (keyState.IsKeyDown(Key.D))
-                {
-                    Camera.ProcessKeyboard(CameraMovement.Right, deltaTimef);
-                }
-                if (keyState.IsKeyDown(Key.E))
-                {
-                    Camera.ProcessKeyboard(CameraMovement.Up, deltaTimef);
-                }
-                if (keyState.IsKeyDown(Key.Q))
-                {
-                    Camera.ProcessKeyboard(CameraMovement.Down, deltaTimef);
-                }
-                #endregion
-                #region Object manipulation.
-                // Selected object
-                if (keyState.IsKeyDown(Key.Number0))
-                {
-                    if (selectedObjectID != 0)
-                    {
-                        Polymono.Print("Selected object ID changed to 0");
-                    }
-                    selectedObjectID = 0;
-                }
-                // Selected object
-                if (keyState.IsKeyDown(Key.Number1))
-                {
-                    if (selectedObjectID != 1)
-                    {
-                        Polymono.Print("Selected object ID changed to 1");
-                    }
-                    selectedObjectID = 1;
-                }
-                // Selected object
-                if (keyState.IsKeyDown(Key.Number2))
-                {
-                    if (selectedObjectID != 2)
-                    {
-                        Polymono.Print("Selected object ID changed to 2");
-                    }
-                    selectedObjectID = 2;
-                }
-                // Selected object
-                if (keyState.IsKeyDown(Key.Number3))
-                {
-                    if (selectedObjectID != 3)
-                    {
-                        Polymono.Print("Selected object ID changed to 3");
-                    }
-                    selectedObjectID = 3;
-                }
-                // Selected object
-                if (keyState.IsKeyDown(Key.Number4))
-                {
-                    if (selectedObjectID != 4)
-                    {
-                        Polymono.Print("Selected object ID changed to 4");
-                    }
-                    selectedObjectID = 4;
-                }
-                // Selected object
-                if (keyState.IsKeyDown(Key.Number5))
-                {
-                    if (selectedObjectID != 5)
-                    {
-                        Polymono.Print("Selected object ID changed to 5");
-                    }
-                    selectedObjectID = 5;
-                }
-                if (keyState.IsKeyDown(Key.Keypad8))
-                {
-                    // Move object forward (Z)
-                    Models[selectedObjectID].Translate(new Vector3(0.0f, 0.0f, 0.05f));
-                }
-                if (keyState.IsKeyDown(Key.Keypad2))
-                {
-                    // Move object backward (Z)
-                    Models[selectedObjectID].Translate(new Vector3(0.0f, 0.0f, -0.05f));
-                }
-                if (keyState.IsKeyDown(Key.Keypad4))
-                {
-                    // Move object left (X)
-                    Models[selectedObjectID].Translate(new Vector3(0.05f, 0.0f, 0.0f));
-                }
-                if (keyState.IsKeyDown(Key.Keypad6))
-                {
-                    // Move object right (X)
-                    Models[selectedObjectID].Translate(new Vector3(-0.05f, 0.0f, 0.0f));
-                }
-                if (keyState.IsKeyDown(Key.Keypad9))
-                {
-                    // Move object up (Y)
-                    Models[selectedObjectID].Translate(new Vector3(0.0f, 0.05f, 0.0f));
-                }
-                if (keyState.IsKeyDown(Key.Keypad7))
-                {
-                    // Move object Down (Y)
-                    Models[selectedObjectID].Translate(new Vector3(0.0f, -0.05f, 0.0f));
-                }
-                if (keyState.IsKeyDown(Key.Keypad5))
-                {
-                    // Reset object
-                    Models[selectedObjectID].ResetModel();
-                }
-                #endregion
-                if (keyState.IsKeyDown(Key.Escape))
-                {
-                    Exit();
-                }
-            }
-            lastKeyboardState = keyState;
-        }
-
-        private bool IsUniquePress(KeyboardState state, Key key)
-        {
-            return (state.IsKeyDown(key) && !lastKeyboardState.IsKeyDown(key));
-        }
-
-        public void UpdateCamera()
+        protected void UpdateCamera()
         {
             if (Focused && isTrackingCursor)
             {
@@ -442,18 +274,88 @@ namespace Polymono {
                 Camera.ProcessMouseMovement(delta.X, delta.Y);
                 ResetMouse();
             }
+            else
+            {
+                Camera.LastPosition = new Vector2(OpenTK.Input.Mouse.GetState().X, OpenTK.Input.Mouse.GetState().Y);
+            }
         }
 
-        public void ResetMouse()
+        protected void ResetMouse()
         {
             // Sets position of the mouse to the middle of the screen.
             OpenTK.Input.Mouse.SetPosition(Bounds.Left + Bounds.Width / 2, Bounds.Top + Bounds.Height / 2);
             Camera.LastPosition = new Vector2(OpenTK.Input.Mouse.GetState().X, OpenTK.Input.Mouse.GetState().Y);
         }
 
-        public static float ToRadians(float degrees)
+        protected void UpdateInput(double deltaTime)
         {
-            return (float)Math.PI * degrees / 180.0f;
+            KeyboardState state = Keyboard.GetState();
+            if (Focused && state.IsAnyKeyDown)
+            {
+                float deltaTimef = (float)deltaTime;
+                #region Text input
+                TextBoxTest.InputText(state, LastKeyboardState);
+                #endregion
+                #region Camera manipulation.
+                if (IsUniquePress(state, Key.ControlLeft))
+                {
+                    isTrackingCursor = !isTrackingCursor;
+                    if (isTrackingCursor)
+                    {
+                        CursorVisible = false;
+                    }
+                    else
+                    {
+                        CursorVisible = true;
+                    }
+                }
+                if (state.IsKeyDown(Key.ShiftLeft))
+                {
+                    deltaTimef *= 5;
+                }
+                if (state.IsKeyDown(Key.W))
+                {
+                    Camera.ProcessKeyboard(CameraMovement.Forward, deltaTimef);
+                }
+                if (state.IsKeyDown(Key.S))
+                {
+                    Camera.ProcessKeyboard(CameraMovement.Backward, deltaTimef);
+                }
+                if (state.IsKeyDown(Key.A))
+                {
+                    Camera.ProcessKeyboard(CameraMovement.Left, deltaTimef);
+                }
+                if (state.IsKeyDown(Key.D))
+                {
+                    Camera.ProcessKeyboard(CameraMovement.Right, deltaTimef);
+                }
+                if (state.IsKeyDown(Key.E))
+                {
+                    Camera.ProcessKeyboard(CameraMovement.Up, deltaTimef);
+                }
+                if (state.IsKeyDown(Key.Q))
+                {
+                    Camera.ProcessKeyboard(CameraMovement.Down, deltaTimef);
+                }
+                #endregion
+                if (state.IsKeyDown(Key.Escape))
+                {
+                    Exit();
+                }
+            }
+            LastKeyboardState = state;
+        }
+
+        protected bool IsUniqueClick(MouseState state, OpenTK.Input.ButtonState buttonState,
+            OpenTK.Input.ButtonState lastButtonState)
+        {
+            return (buttonState == OpenTK.Input.ButtonState.Pressed
+                && !(lastButtonState == OpenTK.Input.ButtonState.Pressed));
+        }
+
+        protected bool IsUniquePress(KeyboardState state, Key key)
+        {
+            return (state.IsKeyDown(key) && !LastKeyboardState.IsKeyDown(key));
         }
     }
 }

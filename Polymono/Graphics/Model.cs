@@ -52,7 +52,7 @@ namespace Polymono.Graphics
             int vPosition = Program.GetAttrib("vPosition");
             int vColour = Program.GetAttrib("vColour");
             int vTexture = Program.GetAttrib("vTexture");
-            if (GameClient.MajorVersion == '4' && GameClient.MinorVersion < '5')
+            if (AGameClient.MajorVersion == '4' && AGameClient.MinorVersion < '5')
             {
                 #region Low version
                 // Input data to buffer.
@@ -127,14 +127,22 @@ namespace Polymono.Graphics
             GL.BindBuffer(BufferTarget.ElementArrayBuffer, 0);
         }
 
+        public override void Update()
+        {
+
+        }
+
         public override void Render()
         {
-            GL.BindVertexArray(VAO);
-            GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
-            GL.BindBuffer(BufferTarget.ElementArrayBuffer, IBO);
-            GL.BindTexture(TextureTarget.Texture2D, TextureID);
-            Program.UniformMatrix4("model", ref ModelMatrix);
-            GL.DrawElements(BeginMode.Triangles, Indices.Length, DrawElementsType.UnsignedInt, 0);
+            if (!IsHidden)
+            {
+                GL.BindVertexArray(VAO);
+                GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, IBO);
+                GL.BindTexture(TextureTarget.Texture2D, TextureID);
+                Program.UniformMatrix4("model", ref ModelMatrix);
+                GL.DrawElements(BeginMode.Triangles, Indices.Length, DrawElementsType.UnsignedInt, 0);
+            }
         }
 
         public override void Delete()

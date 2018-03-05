@@ -102,6 +102,7 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AGameClient.cs" />
     <Compile Include="Game\Dice.cs" />
     <Compile Include="Game\GameObject.cs" />
     <Compile Include="Game\GameState.cs" />
@@ -109,11 +110,13 @@
     <Compile Include="Graphics\Camera.cs" />
     <Compile Include="GameClient.cs" />
     <Compile Include="Graphics\AModel.cs" />
+    <Compile Include="Graphics\Label.cs" />
     <Compile Include="Graphics\Light.cs" />
     <Compile Include="Graphics\Material.cs" />
     <Compile Include="Graphics\Model.cs" />
     <Compile Include="Graphics\ModelObject.cs" />
     <Compile Include="Graphics\Skybox.cs" />
+    <Compile Include="Graphics\TextBox.cs" />
     <Compile Include="Networking\Client.cs" />
     <Compile Include="Networking\PacketHandler.cs" />
     <Compile Include="Networking\Server.cs" />
@@ -175,7 +178,7 @@
     <Content Include="Resources\Graphics\fs.glsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Resources\Graphics\vs.glsl">
+    <Content Include="Resources\Graphics\vs_label.glsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Graphics\fs_col.glsl">
@@ -205,7 +208,13 @@
     <Content Include="Resources\Objects\opentk.mtl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <None Include="Fonts\times.ttf">
+    <None Include="Resources\Fonts\arial.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\Fonts\arial_bold.ttf">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="Resources\Fonts\times.ttf">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </None>
     <None Include="OpenTK.dll.config" />
@@ -223,6 +232,12 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Resources\Graphics\fs_button.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Graphics\fs_label.glsl">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+    <Content Include="Resources\Graphics\vs.glsl">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
   </ItemGroup>

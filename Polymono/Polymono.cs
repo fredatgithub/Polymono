@@ -77,7 +77,14 @@ namespace Polymono {
             // ---------------------- START APPLICATION ----------------------
             Print("Type desired tick rate: ");
             input = Console.ReadLine();
-            int tickRate = Convert.ToInt32(input);
+            int tickRate;
+            try
+            {
+                tickRate = Convert.ToInt32(input);
+            } catch (FormatException)
+            {
+                tickRate = 60;
+            }
             if (tickRate < 30)
             {
                 tickRate = 30;
