@@ -3,6 +3,7 @@ using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
 using OpenTK.Input;
 using Polymono.Graphics;
+using Polymono.Graphics.Components;
 using System;
 using System.Collections.Generic;
 using System.Runtime.InteropServices;
@@ -24,6 +25,8 @@ namespace Polymono
         public Dictionary<ProgramID, ShaderProgram> Programs;
         // Models.
         public Dictionary<int, AModel> Models;
+        // Components.
+        public Dictionary<int, Control> Controls;
         // Matrices.
         public Matrix4 ViewMatrix;
         public Matrix4 StaticViewMatrix;
@@ -44,10 +47,10 @@ namespace Polymono
         public AGameClient()
             : base(1280, 720, new GraphicsMode(32, 24, 0, 4))
         {
-            Polymono.Print(ConsoleLevel.Debug, $"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
-            Polymono.Print(ConsoleLevel.Debug, $"OpenGL Extensions: {GL.GetString(StringName.Extensions)}");
-            Polymono.Print(ConsoleLevel.Debug, $"OpenGL Shader Language: {GL.GetString(StringName.ShadingLanguageVersion)}");
-            Polymono.Print(ConsoleLevel.Debug, $"OpenGL Vendor: {GL.GetString(StringName.Vendor)}");
+            Polymono.Print(ConsoleLevel.DebugGL, $"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
+            Polymono.Print(ConsoleLevel.DebugGL, $"OpenGL Extensions: {GL.GetString(StringName.Extensions)}");
+            Polymono.Print(ConsoleLevel.DebugGL, $"OpenGL Shader Language: {GL.GetString(StringName.ShadingLanguageVersion)}");
+            Polymono.Print(ConsoleLevel.DebugGL, $"OpenGL Vendor: {GL.GetString(StringName.Vendor)}");
             Polymono.Print($"OpenGL version: {GL.GetString(StringName.Version)}");
             Polymono.Print($"Windows OS: {Environment.OSVersion}");
             Polymono.Print($"CLR version: {Environment.Version}");
@@ -61,6 +64,7 @@ namespace Polymono
                 Exit();
             }
             Programs = new Dictionary<ProgramID, ShaderProgram>();
+            Controls = new Dictionary<int, Control>();
             Models = new Dictionary<int, AModel>();
             isTrackingCursor = false;
             CursorVisible = true;
@@ -90,7 +94,7 @@ namespace Polymono
                         case DebugType.DebugTypePushGroup:
                         case DebugType.DebugTypePopGroup:
                         default:
-                            Polymono.Debug($"OpenGL debug message.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
+                            Polymono.DebugGL($"OpenGL debug message.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
                             break;
                     }
                 }, (IntPtr)0);
@@ -132,7 +136,7 @@ namespace Polymono
             RTimeDelta = e.Time;
             RTime += e.Time;
             GL.Enable(EnableCap.DepthTest);
-            GL.ClearColor(Color4.Aqua);
+            GL.ClearColor(Color4.Purple);
             GL.Clear(ClearBufferMask.ColorBufferBit | ClearBufferMask.DepthBufferBit);
             // Render object geometry.
             RenderObjects();

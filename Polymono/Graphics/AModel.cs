@@ -1,6 +1,9 @@
 ﻿using OpenTK;
+using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
+using Polymono.Graphics;
 using System;
+using System.Collections.Generic;
 using System.Drawing;
 using System.IO;
 
@@ -13,8 +16,8 @@ namespace Polymono.Graphics
         public int ID;
         // Buffer references
         public ShaderProgram Program;
-        public int VBO;
         public int VAO;
+        public int VBO;
         public int IBO;
         public int TextureID;
         // Matrices
@@ -150,5 +153,20 @@ namespace Polymono.Graphics
         {
             IsHidden = true;
         }
+
+        //public Vertex[] AppendObjects(ref List<Vertex> Vertices)
+        //{
+        //    // Setup get all array stuff
+        //    int elementsRequired = 0;
+        //    foreach (var array in vertexArrays)
+        //    {
+        //        elementsRequired += array.
+        //    }
+        //    Vertex[] vertices = new Vertex[0];
+        //    foreach (var array in vertexArrays)
+        //    {
+
+        //    }
+        //}
     }
 }

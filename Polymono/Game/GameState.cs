@@ -10,12 +10,14 @@ namespace Polymono.Game {
     }
 
     class GameState {
+        public int CurrentPlayerID;
         public int PlayerCount;
 
         // Manages the game state.
-        public GameState(int playerCount)
+        public GameState(int playerCount, int currentPlayerID = 0)
         {
             PlayerCount = playerCount;
+            CurrentPlayerID = currentPlayerID;
         }
     }
 }

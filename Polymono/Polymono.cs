@@ -7,12 +7,15 @@ using System.Reflection;
 using System.Threading;
 using System.Threading.Tasks;
 
-namespace Polymono {
-    public enum ConsoleLevel {
-        Debug, Normal, Warning, Error
+namespace Polymono
+{
+    public enum ConsoleLevel
+    {
+        Debug, DebugGL, Normal, Warning, Error
     }
 
-    class Polymono {
+    class Polymono
+    {
         public const int MaxPlayers = 8;
 
         public static Dictionary<ConsoleLevel, bool> ConsoleLevels;
@@ -26,69 +29,84 @@ namespace Polymono {
                 { ConsoleLevel.Normal, true },
                 { ConsoleLevel.Error, true },
                 { ConsoleLevel.Warning, true },
-                { ConsoleLevel.Debug, false } };
+                { ConsoleLevel.Debug, false },
+                { ConsoleLevel.DebugGL, false } };
             Version version = Assembly.GetExecutingAssembly().GetName().Version;
             // -------------------------- DEBUG TEXT --------------------------
             PrintF($"Polymono Version increment: {version}");
-            PrintF("Enable debugging text? ", false);
+            Print("Enable debugging text? ", false);
             string input = Console.ReadLine().ToUpperInvariant();
-            if (input == "YES")
+            if (input == "YES" || input == "TRUE")
             {
                 ConsoleLevels[ConsoleLevel.Debug] = true;
-                PrintF("Debugging is enabled.");
-            } else
+                Print("Debugging is enabled.");
+            }
+            else
             {
-                PrintF("Debugging is disabled.");
+                Print("Debugging is disabled.");
+            }
+            Print("Enable OpenGL debugging text? ", false);
+            input = Console.ReadLine().ToUpperInvariant();
+            if (input == "YES" || input == "TRUE")
+            {
+                ConsoleLevels[ConsoleLevel.DebugGL] = true;
+                Print("OpenGL debugging is enabled.");
+            }
+            else
+            {
+                Print("OpenGL debugging is disabled.");
             }
             // ----------------------- SERVER OR CLIENT -----------------------
-            PrintF("Server or Client: ", false);
-            input = Console.ReadLine().ToUpperInvariant();
-            if (input == "SERVER")
-            {
-                Server server = new Server();
-                server.Start(2222);
-                Network = server;
-            }
-            else if (input == "CLIENT")
-            {
-                PrintF("Address: ", false);
-                input = Console.ReadLine();
-                Client client = new Client();
-                client.Start(input, 2222);
-                Network = client;
-            }
+            //PrintF("Server or Client: ", false);
+            //input = Console.ReadLine().ToUpperInvariant();
+            //if (input == "SERVER")
+            //{
+            //    Server server = new Server();
+            //    server.Start(2222);
+            //    Network = server;
+            //}
+            //else if (input == "CLIENT")
+            //{
+            //    PrintF("Address: ", false);
+            //    input = Console.ReadLine();
+            //    Client client = new Client();
+            //    client.Start(input, 2222);
+            //    Network = client;
+            //}
             // ------------------------ SEND MESSAGES ------------------------
-            /*PrintF("Begin sending packets...");
-            Console.ReadLine();
-            if (Network != null)
-            {
-                string message = "";
-                for (int i = 0; i < 1000; i++)
-                {
-                    message += "Hello world. ";
-                }
-                Packet[] packets = PacketHandler.Create(PacketType.Message, message);
-                foreach (var packet in packets)
-                {
-                    packet.Encode();
-                }
-                Network.Send(packets);
-            }*/
+            //PrintF("Begin sending packets...");
+            //Console.ReadLine();
+            //if (Network != null)
+            //{
+            //    string message = "";
+            //    for (int i = 0; i < 1000; i++)
+            //    {
+            //        message += "Hello world. ";
+            //    }
+            //    Packet[] packets = PacketHandler.Create(PacketType.Message, message);
+            //    foreach (var packet in packets)
+            //    {
+            //        packet.Encode();
+            //    }
+            //    Network.Send(packets);
+            //}
             // ---------------------- START APPLICATION ----------------------
-            Print("Type desired tick rate: ");
+            Print("Type desired tick rate (Enter for 60): ", false);
             input = Console.ReadLine();
             int tickRate;
             try
             {
                 tickRate = Convert.ToInt32(input);
-            } catch (FormatException)
+            }
+            catch (FormatException)
             {
                 tickRate = 60;
             }
             if (tickRate < 30)
             {
                 tickRate = 30;
-            } else if (tickRate > 120)
+            }
+            else if (tickRate > 120)
             {
                 tickRate = 120;
             }
@@ -115,14 +133,16 @@ namespace Polymono {
                 if (interpolatedString.Length < 15)
                 {
                     interpolatedString += $" \t\t| {text}";
-                } else
+                }
+                else
                 {
                     interpolatedString += $" \t| {text}";
                 }
                 if (newline)
                 {
                     Console.WriteLine(interpolatedString);
-                } else
+                }
+                else
                 {
                     Console.Write(interpolatedString);
                 }
@@ -136,6 +156,7 @@ namespace Polymono {
         /// <param name="newline">Whether to append a newline.</param>
         public static void Print(string text, bool newline = true)
         {
+            Console.ForegroundColor = ConsoleColor.White;
             Print(ConsoleLevel.Normal, text, newline);
         }
 
@@ -146,6 +167,7 @@ namespace Polymono {
         /// <param name="newline">Whether to append a newline.</param>
         public static void Error(string text, bool newline = true)
         {
+            Console.ForegroundColor = ConsoleColor.Red;
             Print(ConsoleLevel.Error, text, newline);
         }
 
@@ -156,7 +178,13 @@ namespace Polymono {
         /// <param name="newline">Whether to append a newline.</param>
         public static void Debug(string text, bool newline = true)
         {
+            Console.ForegroundColor = ConsoleColor.Cyan;
             Print(ConsoleLevel.Debug, text, newline);
+        }
+        public static void DebugGL(string text, bool newline = true)
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            Print(ConsoleLevel.DebugGL, text, newline);
         }
 
         /// <summary>
@@ -172,7 +200,8 @@ namespace Polymono {
                 if (newline)
                 {
                     Console.WriteLine(text);
-                } else
+                }
+                else
                 {
                     Console.Write(text);
                 }
@@ -186,6 +215,7 @@ namespace Polymono {
         /// <param name="newline">Whether to append a newline.</param>
         public static void PrintF(string text, bool newline = true)
         {
+            Console.ForegroundColor = ConsoleColor.White;
             PrintF(ConsoleLevel.Normal, text, newline);
         }
 
@@ -196,6 +226,7 @@ namespace Polymono {
         /// <param name="newline">Whether to append a newline.</param>
         public static void ErrorF(string text, bool newline = true)
         {
+            Console.ForegroundColor = ConsoleColor.Red;
             PrintF(ConsoleLevel.Error, text, newline);
         }
 
@@ -206,7 +237,13 @@ namespace Polymono {
         /// <param name="newline">Whether to append a newline.</param>
         public static void DebugF(string text, bool newline = true)
         {
+            Console.ForegroundColor = ConsoleColor.Cyan;
             PrintF(ConsoleLevel.Debug, text, newline);
+        }
+        public static void DebugGLF(string text, bool newline = true)
+        {
+            Console.ForegroundColor = ConsoleColor.Cyan;
+            PrintF(ConsoleLevel.DebugGL, text, newline);
         }
         #endregion
     }

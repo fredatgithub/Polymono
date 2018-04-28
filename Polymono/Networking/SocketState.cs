@@ -50,5 +50,9 @@ namespace Polymono.Networking
         /// The closing state of the end point.
         /// </summary>
         public ClosingState ClosingState = ClosingState.NotClosing;
+        /// <summary>
+        /// The success state.
+        /// </summary>
+        public bool ConnectSuccess = false;
     }
 }

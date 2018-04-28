@@ -11,11 +11,14 @@ namespace Polymono.Game {
     class Player : GameObject {
         public static int TOTAL_PLAYER_IDS = 0;
         public int PlayerID;
+        public Board Board;
+        public Property CurrentPosition;
 
         public Player(ShaderProgram program, Board board)
         {
             PlayerID = TOTAL_PLAYER_IDS++;
-            Vector3 offset = board.Property[0].BoardLocationOffset;
+            Board = board;
+            Vector3 offset = board.Properties[0].BoardLocationOffset;
             offset.X += (PlayerID / 5f);
             Model = new ModelObject(
                 program,
@@ -61,6 +64,23 @@ namespace Polymono.Game {
                 default:
                     return Color4.Black;
             }
+        }
+
+        public void MoveToSpace(int spaceID)
+        {
+            Model.Position = Board.Properties[spaceID].BoardLocationOffset;
+            Board.PlayerLocations[this] = spaceID;
+        }
+
+        public void MoveSpaces(int spacesToMove)
+        {
+            int spaceID = Board.GetPlayerLocation(this) + spacesToMove;
+            if (spaceID >= 40)
+            {
+                spaceID %= 40;
+            }
+            Model.Position = Board.Properties[spaceID].BoardLocationOffset;
+            Board.PlayerLocations[this] = spaceID;
         }
     }
 }

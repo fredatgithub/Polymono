@@ -8,132 +8,76 @@ using System.Threading.Tasks;
 
 namespace Polymono.Networking
 {
-    class Client : INetwork
+    public interface ISocket : IDisposable
     {
-        public const int ServerID = 0;
-        public Dictionary<int, SocketState> ConnectedUsers;
+        void Bind(int port);
+        void Listen(int backlog);
+        Socket GetSocket();
+        Task<ISocket> AcceptAsync();
+        Task ConnectAsync(string host, int port);
+        Task<int> ReceiveAsync(byte[] buffer, int offset, int count);
+        Task SendAsync(byte[] buffer, int offset, int count);
+    }
 
-        public Client()
+    class PolySocket : ISocket
+    {
+        public Socket _socket;
+
+        public PolySocket(bool v6 = true)
         {
-            ConnectedUsers = new Dictionary<int, SocketState>();
+            _socket = new Socket(v6 ? AddressFamily.InterNetworkV6 : AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
         }
 
-        public void Start(string address, int port)
+        private PolySocket(Socket socket)
         {
-            try
-            {
-                IPAddress ipAddress = IPAddress.Parse(address);
-                IPEndPoint remoteEP = new IPEndPoint(IPAddress.Parse(address), port);
-                Polymono.Debug($"Host End Point: {remoteEP} Type: {remoteEP.AddressFamily}");
-                // Create a TCP/IP socket.
-                SocketState state = new SocketState()
-                {
-                    RemoteEndPoint = new Socket(ipAddress.AddressFamily, SocketType.Stream, ProtocolType.Tcp)
-                };
-                // Connect to the remote endpoint.  
-                state.RemoteEndPoint.BeginConnect(remoteEP, new AsyncCallback(ConnectCallback), state);
-            }
-            catch (Exception e)
-            {
-                Polymono.Error(e.ToString());
-                Polymono.Debug(e.StackTrace);
-            }
+            _socket = socket;
         }
 
-        public void Send(Packet[] packets, AsyncCallback p)
+        public void Bind(int port)
         {
-            //foreach (Packet packet in packets)
-            //{
-            //    LocalSocket.BeginSend(packet.ByteBuffer, 0, packet.ByteBuffer.Length,
-            //        SocketFlags.None, p, LocalSocket);
-            //}
+            var endPoint = new IPEndPoint(_socket.AddressFamily == AddressFamily.InterNetworkV6 ? IPAddress.IPv6Any : IPAddress.Any, port);
+            _socket.Bind(endPoint);
         }
 
-        public void Exit()
+        public void Listen(int backlog)
         {
-
+            _socket.Listen(backlog);
         }
 
-        private void ConnectCallback(IAsyncResult ar)
+        public Socket GetSocket()
         {
-            // Retrieve the socket from the state object.
-            SocketState state = (SocketState)ar.AsyncState;
-            Socket handler = state.RemoteEndPoint;
-            try
+            return _socket;
+        }
+
+        public async Task ConnectAsync(string host, int port)
+        {
+            await Task.Factory.FromAsync(_socket.BeginConnect, _socket.EndConnect, host, port, null);
+        }
+
+        public async Task<ISocket> AcceptAsync()
+        {
+            return new PolySocket(await Task.Factory.FromAsync(_socket.BeginAccept, _socket.EndAccept, true));
+        }
+
+        public async Task<int> ReceiveAsync(byte[] buffer, int offset, int count)
+        {
+            using (var stream = new NetworkStream(_socket))
             {
-                // Complete the connection.
-                handler.EndConnect(ar);
-                // Add server to connected user dictionary.
-                ConnectedUsers.Add(ServerID, state);
-                // Begin receiving the data from the remote device.
-                handler.BeginReceive(state.ByteBuffer, 0, PacketHandler.BufferSize, 0,
-                    new AsyncCallback(ReceiveCallback), state);
-            }
-            catch (Exception e)
-            {
-                Polymono.Error(e.ToString());
-                Polymono.Debug(e.StackTrace);
+                return await stream.ReadAsync(buffer, offset, count);
             }
         }
 
-        private void ReceiveCallback(IAsyncResult ar)
+        public async Task SendAsync(byte[] buffer, int offset, int count)
         {
-            // Retrieve the state object and the client socket
-            // from the asynchronous state object.
-            SocketState state = (SocketState)ar.AsyncState;
-            Socket client = state.RemoteEndPoint;
-            try
+            using (var stream = new NetworkStream(_socket))
             {
-                // Read data from the remote device.
-                int bytesRead = client.EndReceive(ar);
-                if (bytesRead > 0)
-                {
-                    // Create packet then decode from byte buffer.
-                    Packet packet = new Packet(state.ByteBuffer);
-                    packet.Decode();
-                    // Append packet data to socket data buffer.
-                    state.DataBuffer.Append(packet.DataBuffer);
-                    // Check for terminator.
-                    if (packet.Terminate)
-                    {
-                        // Packet is last of chain.
-                        // Reset buffers in state object.
-                        state.DataBuffer.Clear();
-                    }
-                }
-                else
-                {
-                    Polymono.Debug("No bytes sent from server.");
-                }
-                // Reset byte buffer.
-                state.ByteBuffer = new byte[PacketHandler.BufferSize];
-                // Begin receiving the data from the remote device.  
-                client.BeginReceive(state.ByteBuffer, 0, PacketHandler.BufferSize, 0,
-                    new AsyncCallback(ReceiveCallback), state);
-            }
-            catch (Exception e)
-            {
-                Polymono.Error(e.ToString());
-                Polymono.Debug(e.StackTrace);
+                await stream.WriteAsync(buffer, offset, count);
             }
         }
 
-        private void SendCallback(IAsyncResult ar)
+        public void Dispose()
         {
-            Polymono.Debug("Client::SendCallback");
-            // Retrieve the socket from the state object.
-            Socket client = (Socket)ar.AsyncState;
-            try
-            {
-                // Complete sending the data to the remote device.
-                int bytesSent = client.EndSend(ar);
-                Polymono.DebugF($"Sent {bytesSent} bytes to server.");
-            }
-            catch (Exception e)
-            {
-                Polymono.Error(e.ToString());
-                Polymono.Debug(e.StackTrace);
-            }
+            _socket?.Dispose();
         }
     }
 }

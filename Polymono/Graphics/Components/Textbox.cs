@@ -1,74 +1,96 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Input;
+using Polymono.Graphics.Geometry;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.InteropServices;
 using System.Text;
 using System.Threading.Tasks;
-using System.Windows.Input;
 
-namespace Polymono.Graphics
+namespace Polymono.Graphics.Components
 {
-    public enum TextBoxState
+    class Textbox : Control, IClickable
     {
-        Focused,
-        Unfocused
-    }
+        public Dictionary<int, Control> Controls;
 
-    class TextBox : Label
-    {
-        public TextBoxState State;
-
-        public TextBox(ShaderProgram program, string text, Color4 colour,
-            int x, int y, int width, int height, int windowWidth, int windowHeight,
-            Matrix4 projection)
-            : base(program, text, colour, x, y, width, height, windowWidth, windowHeight, projection)
+        public Textbox(ShaderProgram program,
+            Vector3 position, Vector3 rotation, Vector3 scaling,
+            Dictionary<int, Control> controls, Dictionary<int, AModel> models, Menu menu,
+            int width, int height, int buffer, int windowWidth, int windowHeight,
+            Matrix4 projection, Color4 colour, Color4 highlightColour,
+            Color4 focusedColour, Color4 focusedHighlightColour, 
+            string text = "", string fontLocation = "arial")
+            : base(program, position, rotation, scaling, controls, models, menu, width, height, windowWidth, windowHeight, projection, text, fontLocation)
         {
-            State = TextBoxState.Unfocused;
+            Controls = controls;
+            CreateDefaultModel("Default", width, height, buffer, colour, highlightColour);
+            CreateDefaultModel("Focused", width, height, buffer, focusedColour, focusedHighlightColour);
+            State = ControlState.Unfocused;
         }
 
-        public void Click(Vector2 mousePosition)
+        public async void Click(Vector2 vector)
         {
-            switch (LayoutAlign)
+            vector.Y = WindowHeight - vector.Y;
+            Vector3 position = Models[Selector].Position;
+            bool isHovering = PointInRectangle(
+                new Vector2(position.X, position.Y),
+                new Vector2(position.X + Width, position.Y),
+                new Vector2(position.X + Width, position.Y - Height),
+                new Vector2(position.X, position.Y - Height), vector);
+            if (isHovering && !Models[Selector].IsHidden)
             {
-                case LayoutAlign.TopRight:
-                    mousePosition.Y = WindowHeight - mousePosition.Y;
-                    break;
-                case LayoutAlign.TopLeft:
-                    mousePosition.X = WindowWidth - mousePosition.X;
-                    mousePosition.Y = WindowHeight - mousePosition.Y;
-                    break;
-                case LayoutAlign.BottomRight:
-                    break;
-                case LayoutAlign.BottomLeft:
-                    mousePosition.X = WindowWidth - mousePosition.X;
-                    break;
-                default:
-                    break;
-            }
-            bool isHovering = PointInRectangle(Vertices[0].Position.Xy, Vertices[1].Position.Xy,
-                Vertices[2].Position.Xy, Vertices[3].Position.Xy, mousePosition);
-            if (isHovering && State == TextBoxState.Unfocused)
-            {
-                State = TextBoxState.Focused;
-            }
-            else
-            {
-                State = TextBoxState.Unfocused;
+                if (State == ControlState.Unfocused || State == ControlState.Normal)
+                {
+                    Polymono.Debug($"Textbox clicked: {Text}[{ID}]");
+                    // Unfocus everything else.
+                    foreach (var control in Controls.Values)
+                    {
+                        if (control is Textbox textbox)
+                        {
+                            if (textbox.State == ControlState.Focused)
+                            {
+                                textbox.State = ControlState.Unfocused;
+                                textbox.Selector = "Default";
+                            }
+                        }
+                    }
+                    // Focus this object.
+                    State = ControlState.Focused;
+                    Selector = "Focused";
+                } else
+                {
+                    State = ControlState.Unfocused;
+                    Selector = "Default";
+                }
             }
         }
 
-        public void InputText(KeyboardState state, KeyboardState lastState)
+        private bool PointInRectangle(Vector2 pos1, Vector2 pos2,
+            Vector2 pos3, Vector2 pos4, Vector2 posMouse)
         {
-            if (State == TextBoxState.Focused)
+            return IsRight(pos1, pos2, posMouse)
+                && IsRight(pos2, pos3, posMouse)
+                && IsRight(pos3, pos4, posMouse)
+                && IsRight(pos4, pos1, posMouse);
+        }
+
+        private bool IsRight(Vector2 pos1, Vector2 pos2, Vector2 posMouse)
+        {
+            return ((pos2.X - pos1.X) * (posMouse.Y - pos1.Y)
+                - (pos2.Y - pos1.Y) * (posMouse.X - pos1.X)) < 0;
+        }
+
+        public bool InputText(KeyboardState state, KeyboardState lastState)
+        {
+            if (State == ControlState.Focused)
             {
-                #region Toggle states
+#region Toggle states
                 bool isCapsing = (((ushort)GetKeyState(0x14)) & 0xffff) != 0;
                 bool isShifting = state.IsKeyDown(Key.ShiftRight) || state.IsKeyDown(Key.ShiftLeft);
-                #endregion
-                #region Letter presses.
+#endregion
+#region Letter presses.
                 for (Key key = Key.F1; key <= Key.NonUSBackSlash; key++)
                 {
                     if (key == Key.Back)
@@ -333,14 +355,16 @@ namespace Polymono.Graphics
                         }
                     }
                 }
-                #endregion
-                #region Special functions
+#endregion
+#region Special functions
                 if (IsUniquePress(state, lastState, Key.BackSpace) && Text.Length > 0)
                 {
                     Text = Text.Remove(Text.Length - 1);
                 }
-                #endregion
+#endregion
+                return true;
             }
+            return false;
         }
 
         private string GetKeyText(string lowerChar, string upperChar, bool isCapital)
@@ -352,32 +376,74 @@ namespace Polymono.Graphics
         {
             return (state.IsKeyDown(key) && !lastState.IsKeyDown(key));
         }
-
+        
         [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true, CallingConvention = CallingConvention.Winapi)]
         public static extern short GetKeyState(int keyCode);
 
-        private bool PointInRectangle(Vector2 pos1, Vector2 pos2,
-            Vector2 pos3, Vector2 pos4, Vector2 posMouse)
+        private void CreateDefaultModel(string selector, int width, int height, int buffer,
+            Color4 mainColour, Color4 highlightColour)
         {
-            pos1.X += Position.X;
-            pos1.Y += Position.Y;
-            pos2.X += Position.X;
-            pos2.Y += Position.Y;
-            pos3.X += Position.X;
-            pos3.Y += Position.Y;
-            pos4.X += Position.X;
-            pos4.Y += Position.Y;
-            bool right12 = IsRight(pos1, pos2, posMouse);
-            bool right23 = IsRight(pos2, pos3, posMouse);
-            bool right34 = IsRight(pos3, pos4, posMouse);
-            bool right41 = IsRight(pos4, pos1, posMouse);
-            return right12 && right23 && right34 && right41;
-        }
-
-        private bool IsRight(Vector2 pos1, Vector2 pos2, Vector2 posMouse)
-        {
-            return ((pos2.X - pos1.X) * (posMouse.Y - pos1.Y)
-                - (pos2.Y - pos1.Y) * (posMouse.X - pos1.X)) < 0;
+            height = -height;
+            Square mainSquare = new Square(
+                buffer,                     // X position
+                -buffer,                    // Y position
+                width - (buffer * 2),       // Width
+                height + (buffer * 2),      // Height
+                mainColour);
+            Square topSquare = new Square(
+                0,                          // X position
+                0,                          // Y position
+                width - buffer,             // Width
+                -buffer,                    // Height
+                highlightColour, mainSquare.Append());
+            Square rightSquare = new Square(
+                width - buffer,             // X position
+                0,                          // Y position
+                buffer,                     // Width
+                height + buffer,            // Height
+                highlightColour, topSquare.Append());
+            Square bottomSquare = new Square(
+                buffer,                     // X position
+                height + buffer,            // Y position
+                width - buffer,             // Width
+                -buffer,                    // Height
+                highlightColour, rightSquare.Append());
+            Square leftSquare = new Square(
+                0,                          // X position
+                -buffer,                    // Y position
+                buffer,                     // Width
+                height + buffer,            // Height
+                highlightColour, bottomSquare.Append());
+            // Create vertex list.
+            List<Vertex> vertices = new List<Vertex>(
+                mainSquare.Vertices.Count +
+                topSquare.Vertices.Count +
+                rightSquare.Vertices.Count +
+                bottomSquare.Vertices.Count +
+                leftSquare.Vertices.Count);
+            // Adding each object to one list.
+            vertices.AddRange(mainSquare.Vertices);
+            vertices.AddRange(topSquare.Vertices);
+            vertices.AddRange(rightSquare.Vertices);
+            vertices.AddRange(bottomSquare.Vertices);
+            vertices.AddRange(leftSquare.Vertices);
+            // Create indices list.
+            List<int> indices = new List<int>(
+                mainSquare.Indices.Count +
+                topSquare.Indices.Count +
+                rightSquare.Indices.Count +
+                bottomSquare.Indices.Count +
+                leftSquare.Indices.Count);
+            // Adding each object to one list.
+            indices.AddRange(mainSquare.Indices);
+            indices.AddRange(topSquare.Indices);
+            indices.AddRange(rightSquare.Indices);
+            indices.AddRange(bottomSquare.Indices);
+            indices.AddRange(leftSquare.Indices);
+            // Assign master list to vertex model.
+            Models[selector].Vertices = vertices.ToArray();
+            Models[selector].Indices = indices.ToArray();
+            ControlBase(ref vertices, ref indices);
         }
     }
 }

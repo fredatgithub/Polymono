@@ -1,6 +1,8 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
-using Polymono.Vertices;
+using OpenTK.Graphics.OpenGL4;
+using Polymono.Graphics;
+using Polymono.Graphics.Geometry;
 using QuickFont;
 using QuickFont.Configuration;
 using System;
@@ -12,7 +14,7 @@ using System.Threading.Tasks;
 
 namespace Polymono.Graphics
 {
-    class Label : Model
+    class LabelBackup : Model
     {
         // Positional data
         public int Width, Height;
@@ -37,7 +39,7 @@ namespace Polymono.Graphics
         // Matrices
         public Matrix4 ProjectionMatrix;
 
-        public Label(ShaderProgram program, string text, Color4 colour,
+        public LabelBackup(ShaderProgram program, string text, Color4 colour, Color4 highlightColour,
             int x, int y, int width, int height, int windowWidth, int windowHeight,
             Matrix4 projection,
             LayoutAlign layoutAlign = LayoutAlign.TopRight, string fontLocation = "arial")
@@ -49,7 +51,7 @@ namespace Polymono.Graphics
             switch (LayoutAlign)
             {
                 case LayoutAlign.TopRight:
-                    Position = new Vector3(x, y, 0.0f);
+                    Position = new Vector3(x, WindowHeight - y, 0.0f);
                     Width = width;
                     Height = -height;
                     break;
@@ -76,6 +78,7 @@ namespace Polymono.Graphics
             }
             // Create model, then populate button positional data to that model data.
             Vertices = new Vertex[] {
+
                 new Vertex(// Top left
                     new Vector3(0.0f, 0.0f, 0.0f),
                     colour,
@@ -98,6 +101,41 @@ namespace Polymono.Graphics
                 0, 1, 2,
                 0, 3, 2
             };
+            float highlightSize = Height / 10;
+            Square centreSquare = new Square(
+                highlightSize, // The X coord
+                highlightSize, // The Y coord
+                Width - (highlightSize / 2), // The Width
+                Height - (highlightSize / 2), // The Height
+                colour, // The colour of the box
+                0); // The indexer start point.
+            Square topSquare = new Square(
+                0.0f,
+                0.0f,
+                Width - highlightSize,
+                highlightSize,
+                highlightColour, 
+                centreSquare.Vertices.Count);
+            Square rightSquare = new Square(
+                Width - highlightSize,
+                0.0f,
+                highlightSize,
+                Height - highlightSize,
+                highlightColour, 
+                centreSquare.Vertices.Count + topSquare.Vertices.Count);
+            Square bottomSquare = new Square(0.0f,
+                Height - highlightSize,
+                Width - highlightSize,
+                highlightSize,
+                highlightColour,
+                centreSquare.Vertices.Count + topSquare.Vertices.Count + rightSquare.Vertices.Count);
+            Square leftSquare = new Square(0.0f,
+                highlightSize,
+                highlightSize,
+                Height - highlightSize,
+                highlightColour,
+                centreSquare.Vertices.Count + topSquare.Vertices.Count + rightSquare.Vertices.Count + bottomSquare.Vertices.Count);
+            
             // Text update
             Text = text;
             // Matrix update
@@ -139,7 +177,12 @@ namespace Polymono.Graphics
         {
             if (!IsHidden)
             {
-                base.Render();
+                GL.BindVertexArray(VAO);
+                GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
+                GL.BindBuffer(BufferTarget.ElementArrayBuffer, IBO);
+                GL.BindTexture(TextureTarget.Texture2D, TextureID);
+                Program.UniformMatrix4("model", ref ModelMatrix);
+                GL.DrawElements(BeginMode.Triangles, Indices.Length, DrawElementsType.UnsignedInt, 0);
                 LabelDrawing.ProjectionMatrix = ProjectionMatrix;
                 LabelDrawing.Draw();
             }

@@ -1,29 +1,42 @@
 ﻿using OpenTK;
 using System;
 
-namespace Polymono.Graphics {
-    public enum CameraMovement {
+namespace Polymono.Graphics
+{
+    public enum CameraMovement
+    {
         Forward, Backward, Left, Right, Up, Down
     }
 
-    class Camera {
-        public Vector3 Position = Vector3.Zero;
+    class Camera
+    {
+        // Camera properties.
+        public Vector3 Position;
         public Vector3 Front;
         public Vector3 Up;
         public Vector3 Right;
-        public Vector3 WorldUp = Vector3.UnitY;
+        public Vector3 WorldUp;
+        public float Yaw;
+        public float Pitch;
+        public float MovementSpeed;
+        public float MouseSensitivity;
+        public float Zoom;
         // Position on screen.
-        public Vector2 LastPosition = new Vector2();
-
-        public float Yaw = -90.0f;
-        public float Pitch = 0.0f;
-        public float MovementSpeed = 2.5f;
-        public float MouseSensitivity = 0.1f;
-        public float Zoom = 75.0f;
+        public Vector2 LastPosition;
 
         public Camera(Vector3 position)
         {
             Position = position;
+            Front = -Vector3.UnitZ;
+            Up = Vector3.UnitY;
+            Right = Vector3.UnitX;
+            WorldUp = Vector3.UnitY;
+            Yaw = -90.0f;
+            Pitch = 0.0f;
+            MovementSpeed = 2.5f;
+            MouseSensitivity = 0.1f;
+            Zoom = 75.0f;
+            LastPosition = new Vector2();
         }
 
         public Matrix4 GetViewMatrix()
@@ -57,10 +70,8 @@ namespace Polymono.Graphics {
         {
             xoffset *= MouseSensitivity;
             yoffset *= MouseSensitivity;
-
             Yaw -= xoffset;
             Pitch += yoffset;
-
             // Make sure that when pitch is out of bounds, screen doesn't get flipped
             if (constrainPitch)
             {
@@ -69,7 +80,6 @@ namespace Polymono.Graphics {
                 if (Pitch < -89.0f)
                     Pitch = -89.0f;
             }
-
             // Update Front, Right and Up Vectors using the updated Eular angles
             UpdateCamera();
         }
@@ -87,10 +97,11 @@ namespace Polymono.Graphics {
         public void UpdateCamera()
         {
             // Calculate the new Front vector
-            Vector3 front = new Vector3 {
-                X = (float)(Math.Cos(GameClient.ToRadians(Yaw)) * Math.Cos(GameClient.ToRadians(Pitch))),
-                Y = (float)Math.Sin(GameClient.ToRadians(Pitch)),
-                Z = (float)(Math.Sin(GameClient.ToRadians(Yaw)) * Math.Cos(GameClient.ToRadians(Pitch)))
+            Vector3 front = new Vector3
+            {
+                X = (float)(Math.Cos(AGameClient.ToRadians(Yaw)) * Math.Cos(AGameClient.ToRadians(Pitch))),
+                Y = (float)Math.Sin(AGameClient.ToRadians(Pitch)),
+                Z = (float)(Math.Sin(AGameClient.ToRadians(Yaw)) * Math.Cos(AGameClient.ToRadians(Pitch)))
             };
             Front = Vector3.Normalize(front);
             // Also re-calculate the Right and Up vector

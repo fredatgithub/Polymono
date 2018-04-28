@@ -1,7 +1,7 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
-using Polymono.Vertices;
+using Polymono.Graphics;
 using QuickFont;
 using QuickFont.Configuration;
 using System;
@@ -30,7 +30,7 @@ namespace Polymono.Graphics
         Hidden
     }
 
-    class Button : Model
+    class ButtonBackup : Model
     {
         // Positional data
         public int X, Y, Width, Height;
@@ -47,7 +47,7 @@ namespace Polymono.Graphics
         // Matrices
         public Matrix4 ProjectionMatrix;
 
-        public Button(ShaderProgram program, string text, Color4 colour,
+        public ButtonBackup(ShaderProgram program, string text, Color4 colour,
             int x, int y, int width, int height, int windowWidth, int windowHeight,
             Matrix4 projection, Func<Task> execDelegate,
             LayoutAlign layoutAlign = LayoutAlign.TopRight, string fontLocation = "arial")

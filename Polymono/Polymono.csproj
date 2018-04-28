@@ -106,17 +106,25 @@
     <Compile Include="Game\Dice.cs" />
     <Compile Include="Game\GameObject.cs" />
     <Compile Include="Game\GameState.cs" />
-    <Compile Include="Graphics\Button.cs" />
+    <Compile Include="Graphics\Components\ControlFactory.cs" />
+    <Compile Include="Graphics\Unused\Button.cs" />
     <Compile Include="Graphics\Camera.cs" />
     <Compile Include="GameClient.cs" />
     <Compile Include="Graphics\AModel.cs" />
-    <Compile Include="Graphics\Label.cs" />
+    <Compile Include="Graphics\Components\Button.cs" />
+    <Compile Include="Graphics\Components\Control.cs" />
+    <Compile Include="Graphics\Components\IClickable.cs" />
+    <Compile Include="Graphics\Components\Label.cs" />
+    <Compile Include="Graphics\Components\Textbox.cs" />
+    <Compile Include="Graphics\Geometry\Square.cs" />
+    <Compile Include="Graphics\Unused\Label.cs" />
     <Compile Include="Graphics\Light.cs" />
     <Compile Include="Graphics\Material.cs" />
+    <Compile Include="Graphics\Components\Menu.cs" />
     <Compile Include="Graphics\Model.cs" />
     <Compile Include="Graphics\ModelObject.cs" />
     <Compile Include="Graphics\Skybox.cs" />
-    <Compile Include="Graphics\TextBox.cs" />
+    <Compile Include="Graphics\Unused\TextBox.cs" />
     <Compile Include="Networking\Client.cs" />
     <Compile Include="Networking\PacketHandler.cs" />
     <Compile Include="Networking\Server.cs" />
@@ -128,7 +136,7 @@
     <Compile Include="Game\Player.cs" />
     <Compile Include="Game\Property.cs" />
     <Compile Include="Graphics\ShaderProgram.cs" />
-    <Compile Include="Vertices\Vertex.cs" />
+    <Compile Include="Graphics\Vertices\Vertex.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Content Include="Resources\Textures\cubedie.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

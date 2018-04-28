@@ -1,7 +1,7 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 
-namespace Polymono.Vertices {
+namespace Polymono.Graphics {
     struct PositionVertex {
         public const int Size = (3) * 4;
 

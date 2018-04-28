@@ -1,7 +1,7 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using OpenTK.Graphics.OpenGL4;
-using Polymono.Vertices;
+using Polymono.Graphics;
 using System;
 using System.Collections.Generic;
 using System.Linq;
