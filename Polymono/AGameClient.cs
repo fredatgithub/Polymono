@@ -47,13 +47,13 @@ namespace Polymono
         public AGameClient()
             : base(1280, 720, new GraphicsMode(32, 24, 0, 4))
         {
-            Polymono.Print(ConsoleLevel.DebugGL, $"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
-            Polymono.Print(ConsoleLevel.DebugGL, $"OpenGL Extensions: {GL.GetString(StringName.Extensions)}");
-            Polymono.Print(ConsoleLevel.DebugGL, $"OpenGL Shader Language: {GL.GetString(StringName.ShadingLanguageVersion)}");
-            Polymono.Print(ConsoleLevel.DebugGL, $"OpenGL Vendor: {GL.GetString(StringName.Vendor)}");
-            Polymono.Print($"OpenGL version: {GL.GetString(StringName.Version)}");
-            Polymono.Print($"Windows OS: {Environment.OSVersion}");
-            Polymono.Print($"CLR version: {Environment.Version}");
+            Polymono.DebugGL($"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
+            Polymono.DebugGL($"OpenGL Extensions: {GL.GetString(StringName.Extensions)}");
+            Polymono.DebugGL($"OpenGL Shader Language: {GL.GetString(StringName.ShadingLanguageVersion)}");
+            Polymono.DebugGL($"OpenGL Vendor: {GL.GetString(StringName.Vendor)}");
+            Polymono.Debug($"OpenGL version: {GL.GetString(StringName.Version)}");
+            Polymono.Debug($"Windows OS: {Environment.OSVersion}");
+            Polymono.Debug($"CLR version: {Environment.Version}");
             string version = GL.GetString(StringName.Version);
             MajorVersion = version[0];
             MinorVersion = version[2];

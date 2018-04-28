@@ -21,19 +21,27 @@ namespace Polymono.Graphics.Components
             Menus.Add(this);
         }
 
-        public static void ShowAll()
+        public static void SHOWALL()
         {
             foreach (var menu in Menus)
             {
-                menu.Show();
+                menu.ShowAll();
             }
         }
 
-        public static void HideAll()
+        public static void HIDEALL()
         {
             foreach (var menu in Menus)
             {
-                menu.Hide();
+                menu.HideAll();
+            }
+        }
+
+        public static void RENDERFULLALL()
+        {
+            foreach (var menu in Menus)
+            {
+                menu.RenderFull();
             }
         }
 
@@ -55,11 +63,27 @@ namespace Polymono.Graphics.Components
             }
         }
 
+        public void ShowAll()
+        {
+            foreach (var control in Controls)
+            {
+                control.ShowAll();
+            }
+        }
+
         public void Hide()
         {
             foreach (var control in Controls)
             {
                 control.Hide();
+            }
+        }
+
+        public void HideAll()
+        {
+            foreach (var control in Controls)
+            {
+                control.HideAll();
             }
         }
 
@@ -92,6 +116,14 @@ namespace Polymono.Graphics.Components
             foreach (var control in Controls)
             {
                 control.Render();
+            }
+        }
+
+        public void RenderFull()
+        {
+            foreach (var control in Controls)
+            {
+                control.RenderFull();
             }
         }
     }

@@ -23,7 +23,13 @@ namespace Polymono
         // Game objects
         public Board Board;
         public Dice Dice;
-        #region Menus
+
+#region Menus
+        // Test menu
+        public Menu MnuTest;
+        public Label LblTest;
+        public Button BtnTest;
+        public Textbox TxtTest;
         // Main menu
         public Menu MnuMain;
         public Button BtnCreate;
@@ -50,20 +56,14 @@ namespace Polymono
 
         // Game menu
         public Menu MnuGame;
-
-        // Test menu
-        public Menu MnuTest;
-        public Label LblTest;
-        public Button BtnTest;
-        public Textbox TxtTest;
-
+        public Button BtnGameStart;
+        public Button BtnGameExit;
         // Player options menu
         // <Roll dice> <Purchase property> <Trade>
         public Menu MnuPlayerOptions;
         public Button BtnRollDice;
         public Button BtnPurchaseProperty;
         public Button BtnTrade;
-
         // Player jail menu
         // <Pay 50> <Use card>
         public Menu MnuPlayerJailOptions;
@@ -72,7 +72,8 @@ namespace Polymono
 
         // Trade menu
         public Menu MnuTrade;
-        #endregion
+#endregion
+
         //Misc object
         public Skybox Skybox;
         public Light ActiveLight = new Light(new Vector3(0.0f, 5.0f, 0.0f), new Vector3(1.0f, 1.0f, 1.0f));
@@ -113,9 +114,9 @@ namespace Polymono
             LoadControls();
 
             // Reset hide/show states for all menus.
-            Menu.HideAll();
-            MnuMain.Show();
-            MnuTest.Show();
+            Menu.HIDEALL();
+            MnuMain.ShowAll();
+            MnuTest.ShowAll();
         }
 
         protected void LoadControls()
@@ -130,11 +131,11 @@ namespace Polymono
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f),
                 () =>
                 {
-                    MnuMain.Hide();
-                    MnuNetwork.Show();
-                    LblNetAddress.Hide();
-                    TxtNetAddress.Hide();
-                    BtnNetJoin.Hide();
+                    MnuMain.HideAll();
+                    MnuNetwork.ShowAll();
+                    LblNetAddress.HideAll();
+                    TxtNetAddress.HideAll();
+                    BtnNetJoin.HideAll();
                     return Task.Delay(0);
                 }, "Create game");
             BtnJoin = new Button(Programs[ProgramID.Button],
@@ -145,9 +146,9 @@ namespace Polymono
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f),
                 () =>
                 {
-                    MnuMain.Hide();
-                    MnuNetwork.Show();
-                    BtnNetCreate.Hide();
+                    MnuMain.HideAll();
+                    MnuNetwork.ShowAll();
+                    BtnNetCreate.HideAll();
                     return Task.Delay(0);
                 }, "Join game");
             BtnExit = new Button(Programs[ProgramID.Button],
@@ -237,13 +238,13 @@ namespace Polymono
                 {
                     try
                     {
-                        ISocket socket = new PolySocket(true);
+                        Server server = new Server(true);
                         int port = Convert.ToInt32(TxtNetPort.Text);
-                        socket.Bind(port);
-                        socket.Listen(10);
-                        Polymono.Print("Server created: IPv6 enabled.");
-                        ISocket remote = await socket.AcceptAsync();
-                        Polymono.Print($"Client joined: {remote.GetSocket().RemoteEndPoint}");
+                        server.Socket.Bind(port);
+                        server.Socket.Listen(10);
+                        ISocket remote = await server.AcceptAsync();
+                        MnuNetwork.HideAll();
+                        MnuMessage.ShowAll();
                     }
                     catch (SocketException se)
                     {
@@ -267,12 +268,12 @@ namespace Polymono
                 {
                     try
                     {
-                        ISocket socket = new PolySocket(true);
+                        Client client = new Client(true);
                         int port = Convert.ToInt32(TxtNetPort.Text);
                         string address = TxtNetAddress.Text;
-                        Polymono.Print("Client created: IPv6 enabled.");
-                        await socket.ConnectAsync(address, port);
-                        Polymono.Print($"Joined server: [{address}]:{port}");
+                        await client.ConnectAsync(address, port);
+                        MnuNetwork.HideAll();
+                        MnuMessage.ShowAll();
                     }
                     catch (SocketException se)
                     {
@@ -294,8 +295,8 @@ namespace Polymono
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f),
                 () =>
                 {
-                    MnuNetwork.Hide();
-                    MnuMain.Show();
+                    MnuNetwork.HideAll();
+                    MnuMain.ShowAll();
                     return Task.Delay(0);
                 }, "Back");
             MnuNetwork.CreateBuffers();
@@ -303,32 +304,30 @@ namespace Polymono
             #region Message menu
             MnuMessage = new Menu();
             LblMsgBox = new Label(Programs[ProgramID.Label],
-                new Vector3(0f, 0f, 0f), Vector3.Zero, Vector3.One,
+                new Vector3(32, Height / 2, 0.0f), Vector3.Zero, Vector3.One,
                 Controls, Models, MnuMessage,
-                128, 32, 2, Width, Height, Matrix4.Identity, new Color4(0.1f, 0.1f, 0.1f, 0.6f), "Chat room text");
+                256, 256, 2, Width, Height, Matrix4.Identity, new Color4(0.1f, 0.1f, 0.1f, 0.6f), "Chat room text" + Environment.NewLine + "Chat room text2");
             TxtMsgInput = new Textbox(Programs[ProgramID.Label],
-                new Vector3(0f, 0f, 0f), Vector3.Zero, Vector3.One,
+                new Vector3(32, Height / 2 - 256, 0.0f), Vector3.Zero, Vector3.One,
                 Controls, Models, MnuMessage,
-                64, 64, 2, Width, Height, Matrix4.Identity,
+                64, 32, 2, Width, Height, Matrix4.Identity,
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.7f, 0.7f, 0.0f, 0.8f),
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f),
                 "");
             BtnMsgSend = new Button(Programs[ProgramID.Button],
-                new Vector3(0f, 0f, 0f), Vector3.Zero, Vector3.One,
+                new Vector3(32 + 64, Height / 2 - 256, 0.0f), Vector3.Zero, Vector3.One,
                 Controls, Models, MnuMessage,
-                64, 64, 2, Width, Height, Matrix4.Identity,
+                64, 32, 2, Width, Height, Matrix4.Identity,
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.7f, 0.7f, 0.0f, 0.8f),
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f),
                 () =>
                 {
                     return Task.Delay(0);
-                }, "");
+                }, "Send");
             MnuMessage.CreateBuffers();
-            #endregion
-            #region Game menu
+#endregion
+#region Game menu
             MnuGame = new Menu();
-            #endregion
-            #region Game menu
             MnuPlayerOptions = new Menu();
             BtnRollDice = new Button(Programs[ProgramID.Button],
                 new Vector3(), Vector3.Zero, Vector3.One,
@@ -363,9 +362,9 @@ namespace Polymono
                     // Trade screen.
                     return Task.Delay(0);
                 }, "Trade");
-            MnuGame.CreateBuffers();
-            #endregion
-            #region Game menu
+            MnuPlayerOptions.CreateBuffers();
+#endregion
+#region Game menu
             MnuPlayerJailOptions = new Menu();
             BtnPayJail = new Button(Programs[ProgramID.Button],
                 new Vector3(), Vector3.Zero, Vector3.One,
@@ -463,72 +462,15 @@ namespace Polymono
 
         protected override void RenderUI()
         {
-            // Button Main create renderer
-            Programs[ProgramID.Button].UseProgram();
-            Programs[ProgramID.Button].UniformMatrix4("projection", ref BtnCreate.ProjectionMatrix);
-            BtnCreate.Render();
-            // Button Main join renderer
-            Programs[ProgramID.Button].UseProgram();
-            Programs[ProgramID.Button].UniformMatrix4("projection", ref BtnJoin.ProjectionMatrix);
-            BtnJoin.Render();
-            // Button Main exit renderer
-            Programs[ProgramID.Button].UseProgram();
-            Programs[ProgramID.Button].UniformMatrix4("projection", ref BtnExit.ProjectionMatrix);
-            BtnExit.Render();
-            // Label Network Name renderer
-            Programs[ProgramID.Label].UseProgram();
-            Programs[ProgramID.Label].UniformMatrix4("projection", ref LblNetName.ProjectionMatrix);
-            LblNetName.Render();
-            // Button Network Name renderer
-            Programs[ProgramID.Label].UseProgram();
-            Programs[ProgramID.Label].UniformMatrix4("projection", ref TxtNetName.ProjectionMatrix);
-            TxtNetName.Render();
-            // Label Network Address renderer
-            Programs[ProgramID.Label].UseProgram();
-            Programs[ProgramID.Label].UniformMatrix4("projection", ref LblNetAddress.ProjectionMatrix);
-            LblNetAddress.Render();
-            // Textbox Network Address renderer
-            Programs[ProgramID.Label].UseProgram();
-            Programs[ProgramID.Label].UniformMatrix4("projection", ref TxtNetAddress.ProjectionMatrix);
-            TxtNetAddress.Render();
-            // Label Network Port renderer
-            Programs[ProgramID.Label].UseProgram();
-            Programs[ProgramID.Label].UniformMatrix4("projection", ref LblNetPort.ProjectionMatrix);
-            LblNetPort.Render();
-            // Textbox Network Port renderer
-            Programs[ProgramID.Label].UseProgram();
-            Programs[ProgramID.Label].UniformMatrix4("projection", ref TxtNetPort.ProjectionMatrix);
-            TxtNetPort.Render();
-            // Button Create Server renderer
-            Programs[ProgramID.Button].UseProgram();
-            Programs[ProgramID.Button].UniformMatrix4("projection", ref BtnNetCreate.ProjectionMatrix);
-            BtnNetCreate.Render();
-            // Button Create Server renderer
-            Programs[ProgramID.Button].UseProgram();
-            Programs[ProgramID.Button].UniformMatrix4("projection", ref BtnNetJoin.ProjectionMatrix);
-            BtnNetJoin.Render();
-            // Button Network back renderer
-            Programs[ProgramID.Button].UseProgram();
-            Programs[ProgramID.Button].UniformMatrix4("projection", ref BtnNetBack.ProjectionMatrix);
-            BtnNetBack.Render();
-            // Button Roll Dice renderer
-            Programs[ProgramID.Button].UseProgram();
-            Programs[ProgramID.Button].UniformMatrix4("projection", ref BtnRollDice.ProjectionMatrix);
-            BtnRollDice.Render();
-            // Button Test renderer
-            Programs[ProgramID.Label].UseProgram();
-            Programs[ProgramID.Label].UniformMatrix4("projection", ref BtnTest.ProjectionMatrix);
-            BtnTest.Render();
-            // Textbox Test renderer
-            Programs[ProgramID.Label].UseProgram();
-            Programs[ProgramID.Label].UniformMatrix4("projection", ref TxtTest.ProjectionMatrix);
-            TxtTest.Render();
+            MnuMain.RenderFull();
+            MnuNetwork.RenderFull();
+            MnuMessage.RenderFull();
+            MnuPlayerOptions.RenderFull();
+            MnuPlayerJailOptions.RenderFull();
             // Mouse position renderer
             if (Focused && !isTrackingCursor)
             {
-                Programs[ProgramID.Label].UseProgram();
-                Programs[ProgramID.Label].UniformMatrix4("projection", ref UIProjectionMatrix);
-                LblTest.Render();
+                LblTest.RenderFull();
             }
         }
 
@@ -578,12 +520,17 @@ namespace Polymono
 
         protected override void OnMouseDown(MouseButtonEventArgs e)
         {
+            List<IClickable> clickables = new List<IClickable>();
             foreach (Control control in Controls.Values)
             {
-                if (control is IClickable clickable)
+                if (control is IClickable clickable && !control.IsHidden())
                 {
-                    clickable.Click(new Vector2(e.X, e.Y));
+                    clickables.Add(clickable);
                 }
+            }
+            foreach (var clickable in clickables)
+            {
+                clickable.Click(new Vector2(e.X, e.Y));
             }
         }
 

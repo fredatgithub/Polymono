@@ -13,18 +13,20 @@ namespace Polymono.Graphics.Components
     {
         public Func<Task> ExecDelegate;
 
-        public Button(ShaderProgram program, 
+        public Button(ShaderProgram program,
             Vector3 position, Vector3 rotation, Vector3 scaling,
             Dictionary<int, Control> controls, Dictionary<int, AModel> models, Menu menu,
             int width, int height, int buffer, int windowWidth, int windowHeight,
             Matrix4 projection, Color4 colour, Color4 highlightColour,
-            Color4 focusedColour, Color4 focusedHighlightColour, 
+            Color4 focusedColour, Color4 focusedHighlightColour,
             Func<Task> execDelegate, string text = "", string fontLocation = "arial")
             : base(program, position, rotation, scaling, controls, models, menu, width, height, windowWidth, windowHeight, projection, text, fontLocation)
         {
             ExecDelegate = execDelegate;
+            Models.Add("Clicked", new Model(program, position, rotation, scaling));
+            models.Add(Models["Clicked"].ID, Models["Clicked"]);
             CreateDefaultModel("Default", width, height, buffer, colour, highlightColour);
-            CreateDefaultModel("Focused", width, height, buffer, focusedColour, focusedHighlightColour);
+            CreateDefaultModel("Clicked", width, height, buffer, focusedColour, focusedHighlightColour);
         }
 
         public async void Click(Vector2 vector)
@@ -36,12 +38,20 @@ namespace Polymono.Graphics.Components
                 new Vector2(position.X + Width, position.Y),
                 new Vector2(position.X + Width, position.Y - Height),
                 new Vector2(position.X, position.Y - Height), vector);
-            if (isHovering && !Models[Selector].IsHidden)
+            if (isHovering && !Models[Selector].IsHidden && State != ControlState.Clicked)
             {
                 Polymono.Debug($"Button clicked: {Text}[{ID}]");
-                State = ControlState.Focused;
-                Selector = "Focused";
-                await ExecDelegate();
+                State = ControlState.Clicked;
+                Selector = "Clicked";
+                try
+                {
+                    await ExecDelegate();
+                }
+                catch (Exception e)
+                {
+                    Polymono.Error(e.Message);
+                    Polymono.ErrorF(e.StackTrace);
+                }
                 State = ControlState.Normal;
                 Selector = "Default";
             }

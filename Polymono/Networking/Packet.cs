@@ -42,12 +42,12 @@ namespace Polymono.Networking
         {
             if (DataBuffer != null)
             {
-                Polymono.Debug("------------------------------START ENCODE--------------------------------");
-                Polymono.Debug($"Type: {Type}");
-                Polymono.Debug($"Target ID: {TargetID}");
-                Polymono.Debug($"Terminate: {Terminate}");
-                Polymono.Debug($"Data buffer: {DataBuffer}");
-                Polymono.Debug("Converting data to byte arrays...");
+                Polymono.DebugF("------------------------------START ENCODE--------------------------------");
+                Polymono.DebugF($"Type: {Type}");
+                Polymono.DebugF($"Target ID: {TargetID}");
+                Polymono.DebugF($"Terminate: {Terminate}");
+                Polymono.DebugF($"Data buffer: {DataBuffer}");
+                Polymono.DebugF("Converting data to byte arrays...");
                 // Do object->byte conversions.
                 byte[] typeBytes = BitConverter.GetBytes((int)Type);
                 byte[] targetIDBytes = BitConverter.GetBytes(TargetID);
@@ -66,13 +66,13 @@ namespace Polymono.Networking
                 Buffer.BlockCopy(dataBytes, 0, ByteBuffer,
                     PacketHandler.TypeSize + PacketHandler.TargetIDSize + PacketHandler.TerminatorSize,
                     dataBytes.Length);
-                Polymono.Debug("Conversion to byte arrays finished.");
-                Polymono.Debug($"Type bytes: {PrintByteArray(typeBytes)}");
-                Polymono.Debug($"Target ID bytes: {PrintByteArray(targetIDBytes)}");
-                Polymono.Debug($"Data bytes: {PrintByteArray(dataBytes)}");
-                Polymono.Debug($"Terminator bytes: {terminatorBytes}");
-                Polymono.Debug($"Byte buffer: {PrintByteArray(ByteBuffer)}");
-                Polymono.Debug("-------------------------------END ENCODE---------------------------------");
+                Polymono.DebugF("Conversion to byte arrays finished.");
+                Polymono.DebugF($"Type bytes: {PrintByteArray(typeBytes)}");
+                Polymono.DebugF($"Target ID bytes: {PrintByteArray(targetIDBytes)}");
+                Polymono.DebugF($"Data bytes: {PrintByteArray(dataBytes)}");
+                Polymono.DebugF($"Terminator bytes: {terminatorBytes}");
+                Polymono.DebugF($"Byte buffer: {PrintByteArray(ByteBuffer)}");
+                Polymono.DebugF("-------------------------------END ENCODE---------------------------------");
             }
             else
             {
@@ -84,9 +84,9 @@ namespace Polymono.Networking
         {
             if (ByteBuffer != null)
             {
-                Polymono.Debug("------------------------------START DECODE--------------------------------");
-                Polymono.Debug($"Byte buffer: {PrintByteArray(ByteBuffer)}");
-                Polymono.Debug("Converting bytes to objects...");
+                Polymono.DebugF("------------------------------START DECODE--------------------------------");
+                Polymono.DebugF($"Byte buffer: {PrintByteArray(ByteBuffer)}");
+                Polymono.DebugF("Converting bytes to objects...");
                 // Do byte->object conversions.
                 Type = (PacketType)BitConverter.ToInt32(ByteBuffer, 0);
                 TargetID = BitConverter.ToInt32(ByteBuffer, PacketHandler.TypeSize);
@@ -95,12 +95,13 @@ namespace Polymono.Networking
                 DataBuffer = Encoding.UTF8.GetString(ByteBuffer,
                     PacketHandler.TypeSize + PacketHandler.TargetIDSize + PacketHandler.TerminatorSize,
                     PacketHandler.DataSize);
-                Polymono.Debug("Conversion to objects finished.");
-                Polymono.Debug($"Type: {Type}");
-                Polymono.Debug($"Target ID: {TargetID}");
-                Polymono.Debug($"Terminate: {Terminate}");
-                Polymono.Debug($"DataBuffer: {DataBuffer}");
-                Polymono.Debug("-------------------------------END DECODE---------------------------------");
+                DataBuffer = DataBuffer.Replace("\0", "");
+                Polymono.DebugF("Conversion to objects finished.");
+                Polymono.DebugF($"Type: {Type}");
+                Polymono.DebugF($"Target ID: {TargetID}");
+                Polymono.DebugF($"Terminate: {Terminate}");
+                Polymono.DebugF($"DataBuffer: {DataBuffer}");
+                Polymono.DebugF("-------------------------------END DECODE---------------------------------");
             }
             else
             {

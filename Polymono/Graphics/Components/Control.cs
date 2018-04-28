@@ -70,12 +70,10 @@ namespace Polymono.Graphics.Components
                 { "Focused", new Model(program, position, rotation, scaling) },
                 { "Hovering", new Model(program, position, rotation, scaling) }
             };
-            controls.Add(ID, this);
             foreach (var model in Models.Values)
             {
                 models.Add(model.ID, model);
             }
-            menu.Add(this);
             // Text assignments
             Text = text;
             ProjectionMatrix = projection;
@@ -96,6 +94,9 @@ namespace Polymono.Graphics.Components
             // Buffer text.
             PrintText(position);
             State = ControlState.Normal;
+            // Add this control to dictionaries.
+            controls.Add(ID, this);
+            menu.Add(this);
         }
 
         public void PrintText(Vector3 position)
@@ -140,30 +141,72 @@ namespace Polymono.Graphics.Components
             }
         }
 
+        public void RenderFull()
+        {
+            UseProgram();
+            UpdateMatrix();
+            Render();
+        }
+
+        public void UseProgram()
+        {
+            Models[Selector].Program.UseProgram();
+        }
+
+        public void UpdateMatrix()
+        {
+            Models[Selector].Program.UniformMatrix4("projection", ref ProjectionMatrix);
+        }
+
         public void Show()
+        {
+            Models[Selector].Show();
+        }
+
+        public void Show(string selector)
+        {
+            Models[selector].Show();
+        }
+
+        public void ShowAll()
         {
             foreach (var model in Models.Values)
             {
                 model.Show();
             }
         }
-        
-        public void Show(string selector)
-        {
-            Models[selector].Show();
-        }
 
         public void Hide()
         {
-            foreach (var model in Models.Values)
-            {
-                model.Hide();
-            }
+            Models[Selector].Hide();
         }
 
         public void Hide(string selector)
         {
             Models[selector].Hide();
+        }
+
+        public void HideAll()
+        {
+            foreach (var model in Models.Values)
+            {
+                model.Hide();
+            }
+            if (State != ControlState.Normal)
+            {
+                State = ControlState.Normal;
+                Selector = "Default";
+            }
+        }
+
+        public bool IsHidden()
+        {
+            return Models[Selector].IsHidden;
+        }
+
+        public bool IsHidden(string selector)
+        {
+            return Models[selector].IsHidden;
         }
 
         public void UpdateModelMatrix()
