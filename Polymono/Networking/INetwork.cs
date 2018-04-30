@@ -8,7 +8,7 @@ namespace Polymono.Networking
 {
     interface INetwork
     {
-        void Exit();
-        void Send(Packet[] packets, AsyncCallback p);
+        ref Queue<PacketData> GetPacketQueue();
+        Task SendAsync(params Packet[] packets);
     }
 }

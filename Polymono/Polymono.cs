@@ -16,10 +16,8 @@ namespace Polymono
 
     class Polymono
     {
-        public const int MaxPlayers = 8;
-
+        public const int MaxPlayers = 4;
         public static Dictionary<ConsoleLevel, bool> ConsoleLevels;
-        public static INetwork Network;
 
         public static void Main()
         {

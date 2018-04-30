@@ -11,13 +11,16 @@ namespace Polymono.Game
 {
     class Board : GameObject
     {
-        public GameState State;
+        public GameClient GameClient;
         public Property[] Properties;
         public Player[] Players;
         public Dictionary<Player, int> PlayerLocations;
+        private ShaderProgram PlayerProgram;
+        public int CurrentPlayerID;
 
-        public Board(ShaderProgram boardProgram, ShaderProgram playerProgram, GameState state)
+        public Board(ShaderProgram boardProgram, ShaderProgram playerProgram, GameClient gameClient)
         {
+            GameClient = gameClient;
             // Set vertices.
             List<Vertex> vertices = new List<Vertex> {
                 new Vertex(new Vector3(-0.5f, -0.5f, 0.0f), Color4.White, new Vector2(1.0f, 1.0f)),
@@ -82,18 +85,22 @@ namespace Polymono.Game
                         break;
                 }
             }
-
-            State = state;
-            Players = new Player[state.PlayerCount];
-            for (int i = 0; i < Players.Length; i++)
-            {
-                Players[i] = new Player(playerProgram, this);
-            }
+            Players = new Player[Polymono.MaxPlayers];
             PlayerLocations = new Dictionary<Player, int>();
-            foreach (var player in Players)
+            PlayerProgram = playerProgram;
+            // Populate all players.
+        }
+
+        public Player AddPlayer(string name)
+        {
+            Player player = new Player(PlayerProgram, this)
             {
-                PlayerLocations.Add(player, 0);
-            }
+                PlayerName = name
+            };
+            player.Model.CreateBuffer();
+            PlayerLocations.Add(player, 0);
+            GameClient.Models.Add(player.Model.ID, player.Model);
+            return player;
         }
 
         public int GetPlayerLocation(Player player)
@@ -101,9 +108,27 @@ namespace Polymono.Game
             return PlayerLocations[player];
         }
 
+        public Player GetPlayer(int id)
+        {
+            return Players[id];
+        }
+
         public Player GetPlayer()
         {
-            return Players[State.CurrentPlayerID];
+            return Players[CurrentPlayerID];
+        }
+
+        public List<Player> GetPlayers()
+        {
+            List<Player> players = new List<Player>();
+            foreach (var player in Players)
+            {
+                if (player != null)
+                {
+                    players.Add(player);
+                }
+            }
+            return players;
         }
 
         private void CreateProperties(int id, Vector3 vector)

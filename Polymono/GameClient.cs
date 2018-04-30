@@ -9,6 +9,7 @@ using Polymono.Networking;
 using System;
 using System.Collections.Generic;
 using System.Net.Sockets;
+using System.Threading;
 using System.Threading.Tasks;
 
 namespace Polymono
@@ -24,7 +25,7 @@ namespace Polymono
         public Board Board;
         public Dice Dice;
 
-#region Menus
+        #region Menus
         // Test menu
         public Menu MnuTest;
         public Label LblTest;
@@ -72,17 +73,34 @@ namespace Polymono
 
         // Trade menu
         public Menu MnuTrade;
-#endregion
+        #endregion
 
         //Misc object
         public Skybox Skybox;
         public Light ActiveLight = new Light(new Vector3(0.0f, 5.0f, 0.0f), new Vector3(1.0f, 1.0f, 1.0f));
 
-        private Server _server;
-        //private Client _client;
-        public INetwork Network { set; get; }
-
-        private bool _isServer = false;
+        public INetwork network;
+        public INetwork Network {
+            set {
+                if (value is Server)
+                {
+                    network = value;
+                    IsServer = true;
+                    StartReceiving = true;
+                }
+                else if (value is Client)
+                {
+                    network = value;
+                    IsServer = false;
+                    StartReceiving = true;
+                }
+            }
+            get {
+                return network;
+            }
+        }
+        public bool IsServer = false;
+        public bool StartReceiving = false;
 
         public GameClient(int playerCount) : base()
         {
@@ -96,15 +114,9 @@ namespace Polymono
             Skybox = new Skybox(Programs[ProgramID.Skybox], @"Resources\Objects\sphere.obj", false);
             Skybox.CreateBuffer();
             // Board
-            Board = new Board(Programs[ProgramID.Full], Programs[ProgramID.Player], State);
+            Board = new Board(Programs[ProgramID.Full], Programs[ProgramID.Player], this);
             Board.Model.CreateBuffer();
             Models.Add(Board.Model.ID, Board.Model);
-            // Players
-            for (int i = 0; i < State.PlayerCount; i++)
-            {
-                Board.Players[i].Model.CreateBuffer();
-                Models.Add(Board.Players[i].Model.ID, Board.Players[i].Model);
-            }
             // Dice
             Dice = new Dice(Programs[ProgramID.Dice]);
             Dice.Model.CreateBuffer();
@@ -234,15 +246,23 @@ namespace Polymono
                 128, 32, 2, Width, Height, Matrix4.Identity,
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.7f, 0.7f, 0.0f, 0.8f), // Default model
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f), // Clicked model
-                async () =>
+                () =>
                 {
                     try
                     {
-                        Server server = new Server(true);
+                        Server server = new Server(this, TxtNetName.Text, true);
                         int port = Convert.ToInt32(TxtNetPort.Text);
-                        server.Socket.Bind(port);
-                        server.Socket.Listen(10);
-                        ISocket remote = await server.AcceptAsync();
+                        server.LocalHandler().Bind(port);
+                        server.LocalHandler().Listen(10);
+                        new Thread(() =>
+                        {
+                            server.Start();
+                        })
+                        {
+                            Name = "NetworkThread",
+                            Priority = ThreadPriority.BelowNormal
+                        }.Start();
+                        Network = server;
                         MnuNetwork.HideAll();
                         MnuMessage.ShowAll();
                     }
@@ -257,6 +277,7 @@ namespace Polymono
                         Polymono.Error(fe.Message);
                         Polymono.ErrorF(fe.StackTrace);
                     }
+                    return Task.Delay(0);
                 }, "Create Server");
             BtnNetJoin = new Button(Programs[ProgramID.Button],
                 new Vector3((Width / 2) - 64, Height - (64 * 4), 0.0f), Vector3.Zero, Vector3.One,
@@ -264,14 +285,22 @@ namespace Polymono
                 128, 32, 2, Width, Height, Matrix4.Identity,
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.7f, 0.7f, 0.0f, 0.8f), // Default model
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f), // Clicked model
-                async () =>
+                () =>
                 {
                     try
                     {
-                        Client client = new Client(true);
-                        int port = Convert.ToInt32(TxtNetPort.Text);
+                        Client client = new Client(this, true);
                         string address = TxtNetAddress.Text;
-                        await client.ConnectAsync(address, port);
+                        int port = Convert.ToInt32(TxtNetPort.Text);
+                        string name = TxtNetName.Text;
+                        new Thread(() =>
+                        {
+                            client.ConnectAsync(address, port, name);
+                        })
+                        {
+                            Name = "NetworkThread"
+                        }.Start();
+                        Network = client;
                         MnuNetwork.HideAll();
                         MnuMessage.ShowAll();
                     }
@@ -286,6 +315,7 @@ namespace Polymono
                         Polymono.Error(fe.Message);
                         Polymono.ErrorF(fe.StackTrace);
                     }
+                    return Task.Delay(0);
                 }, "Join server");
             BtnNetBack = new Button(Programs[ProgramID.Button],
                 new Vector3((Width / 2) - 64, Height - (64 * 6), 0.0f), Vector3.Zero, Vector3.One,
@@ -310,23 +340,27 @@ namespace Polymono
             TxtMsgInput = new Textbox(Programs[ProgramID.Label],
                 new Vector3(32, Height / 2 - 256, 0.0f), Vector3.Zero, Vector3.One,
                 Controls, Models, MnuMessage,
-                64, 32, 2, Width, Height, Matrix4.Identity,
+                192, 32, 2, Width, Height, Matrix4.Identity,
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.7f, 0.7f, 0.0f, 0.8f),
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f),
                 "");
             BtnMsgSend = new Button(Programs[ProgramID.Button],
-                new Vector3(32 + 64, Height / 2 - 256, 0.0f), Vector3.Zero, Vector3.One,
+                new Vector3(32 + 192, Height / 2 - 256, 0.0f), Vector3.Zero, Vector3.One,
                 Controls, Models, MnuMessage,
                 64, 32, 2, Width, Height, Matrix4.Identity,
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.7f, 0.7f, 0.0f, 0.8f),
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f),
                 () =>
                 {
+                    string text = TxtMsgInput.Text.Trim();
+                    TxtMsgInput.Text = "";
+                    LblMsgBox.Text += Environment.NewLine + text;
+                    Network.SendAsync(PacketHandler.Create(PacketType.Message, int.MaxValue, text));
                     return Task.Delay(0);
                 }, "Send");
             MnuMessage.CreateBuffers();
-#endregion
-#region Game menu
+            #endregion
+            #region Game menu
             MnuGame = new Menu();
             MnuPlayerOptions = new Menu();
             BtnRollDice = new Button(Programs[ProgramID.Button],
@@ -363,8 +397,8 @@ namespace Polymono
                     return Task.Delay(0);
                 }, "Trade");
             MnuPlayerOptions.CreateBuffers();
-#endregion
-#region Game menu
+            #endregion
+            #region Game menu
             MnuPlayerJailOptions = new Menu();
             BtnPayJail = new Button(Programs[ProgramID.Button],
                 new Vector3(), Vector3.Zero, Vector3.One,
@@ -401,6 +435,9 @@ namespace Polymono
             LblTest.Text = $"X:{Mouse.X} Y:{Mouse.Y}";
             LblTest.SetTranslate(new Vector3(Mouse.X + 16, Height - Mouse.Y, 0.0f));
             LblTest.Update();
+            #region Network updating
+            UpdateGameFromNetwork();
+            #endregion
             #region Update Matrices.
             // Update view matrices.
             ViewMatrix = Camera.GetViewMatrix();
@@ -452,7 +489,7 @@ namespace Polymono
             Dice.Model.Render();
             // Player renderer.
             Programs[ProgramID.Player].UseProgram();
-            foreach (var player in Board.Players)
+            foreach (var player in Board.GetPlayers())
             {
                 Programs[ProgramID.Player].UniformMatrix4("projection", ref ProjectionMatrix);
                 Programs[ProgramID.Player].UniformMatrix4("view", ref ViewMatrix);
@@ -467,10 +504,32 @@ namespace Polymono
             MnuMessage.RenderFull();
             MnuPlayerOptions.RenderFull();
             MnuPlayerJailOptions.RenderFull();
+            BtnTest.RenderFull();
             // Mouse position renderer
             if (Focused && !isTrackingCursor)
             {
                 LblTest.RenderFull();
+            }
+        }
+
+        private void UpdateGameFromNetwork()
+        {
+            if (Network == null)
+            {
+                return;
+            }
+            Queue<PacketData> packetsQueue = Network.GetPacketQueue();
+            List<PacketData> packets = new List<PacketData>();
+            for (int i = 0; i < packetsQueue.Count; i++)
+            {
+                packets.Add(packetsQueue.Dequeue());
+            }
+            foreach (var packet in packets)
+            {
+                if (packet.Type == PacketType.Message)
+                {
+                    LblMsgBox.Text += Environment.NewLine + packet.Data;
+                }
             }
         }
 

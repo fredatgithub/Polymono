@@ -1,6 +1,7 @@
 ﻿using OpenTK;
 using OpenTK.Graphics;
 using Polymono.Graphics;
+using Polymono.Networking;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -11,8 +12,10 @@ namespace Polymono.Game {
     class Player : GameObject {
         public static int TOTAL_PLAYER_IDS = 0;
         public int PlayerID;
+        public string PlayerName;
         public Board Board;
         public Property CurrentPosition;
+        public ISocket networkHandle;
 
         public Player(ShaderProgram program, Board board)
         {
@@ -29,6 +32,16 @@ namespace Polymono.Game {
                 new Vector3(0.1f, 0.1f, 0.1f),
                 @"Resources\Objects\player.mtl",
                 @"b0b0b0");
+        }
+
+        public void SetNetworkHandle(ISocket socket)
+        {
+            networkHandle = socket;
+        }
+
+        public ref ISocket NetworkHandler()
+        {
+            return ref networkHandle;
         }
 
         public Color4 GetRandomColour()

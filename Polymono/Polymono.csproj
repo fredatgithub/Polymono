@@ -126,8 +126,10 @@
     <Compile Include="Graphics\Skybox.cs" />
     <Compile Include="Graphics\Unused\TextBox.cs" />
     <Compile Include="Networking\Client.cs" />
-    <Compile Include="Networking\PolySocket.cs" />
+    <Compile Include="Networking\PacketData.cs" />
+    <Compile Include="Networking\SocketHandler.cs" />
     <Compile Include="Networking\PacketHandler.cs" />
+    <Compile Include="Networking\Protocol.cs" />
     <Compile Include="Networking\Server.cs" />
     <Compile Include="Networking\INetwork.cs" />
     <Compile Include="Networking\Packet.cs" />

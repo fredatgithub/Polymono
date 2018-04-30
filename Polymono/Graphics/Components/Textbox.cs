@@ -20,7 +20,7 @@ namespace Polymono.Graphics.Components
             Dictionary<int, Control> controls, Dictionary<int, AModel> models, Menu menu,
             int width, int height, int buffer, int windowWidth, int windowHeight,
             Matrix4 projection, Color4 colour, Color4 highlightColour,
-            Color4 focusedColour, Color4 focusedHighlightColour, 
+            Color4 focusedColour, Color4 focusedHighlightColour,
             string text = "", string fontLocation = "arial")
             : base(program, position, rotation, scaling, controls, models, menu, width, height, windowWidth, windowHeight, projection, text, fontLocation)
         {
@@ -59,7 +59,8 @@ namespace Polymono.Graphics.Components
                     // Focus this object.
                     State = ControlState.Focused;
                     Selector = "Focused";
-                } else
+                }
+                else
                 {
                     State = ControlState.Unfocused;
                     Selector = "Default";
@@ -86,11 +87,11 @@ namespace Polymono.Graphics.Components
         {
             if (State == ControlState.Focused)
             {
-#region Toggle states
+                #region Toggle states
                 bool isCapsing = (((ushort)GetKeyState(0x14)) & 0xffff) != 0;
                 bool isShifting = state.IsKeyDown(Key.ShiftRight) || state.IsKeyDown(Key.ShiftLeft);
-#endregion
-#region Letter presses.
+                #endregion
+                #region Letter presses.
                 for (Key key = Key.F1; key <= Key.NonUSBackSlash; key++)
                 {
                     if (key == Key.Back)
@@ -190,12 +191,26 @@ namespace Polymono.Graphics.Components
                             case Key.Right:
                                 break;
                             case Key.Enter:
+                                // TODO: Make textbox execute event.
                                 break;
                             case Key.Space:
                                 Text += " ";
                                 break;
                             case Key.Tab:
-                                Text += "    ";
+                                if (!isShifting)
+                                {
+                                    Text += "    ";
+                                }
+                                else
+                                {
+                                    for (int i = 0; i < 4; i++)
+                                    {
+                                        if (Text.EndsWith(" "))
+                                        {
+                                            Text = Text.Substring(0, Text.Length - 1);
+                                        }
+                                    }
+                                }
                                 break;
                             case Key.BackSpace:
                                 if (Text.Length > 0)
@@ -355,13 +370,13 @@ namespace Polymono.Graphics.Components
                         }
                     }
                 }
-#endregion
-#region Special functions
+                #endregion
+                #region Special functions
                 if (IsUniquePress(state, lastState, Key.BackSpace) && Text.Length > 0)
                 {
                     Text = Text.Remove(Text.Length - 1);
                 }
-#endregion
+                #endregion
                 return true;
             }
             return false;
@@ -376,7 +391,7 @@ namespace Polymono.Graphics.Components
         {
             return (state.IsKeyDown(key) && !lastState.IsKeyDown(key));
         }
-        
+
         [DllImport("user32.dll", CharSet = CharSet.Auto, ExactSpelling = true, CallingConvention = CallingConvention.Winapi)]
         public static extern short GetKeyState(int keyCode);
 
