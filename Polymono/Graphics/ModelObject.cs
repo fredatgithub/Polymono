@@ -180,7 +180,7 @@ namespace Polymono.Graphics
                 GL.BindVertexArray(VAO);
                 GL.BindBuffer(BufferTarget.ArrayBuffer, VBO);
                 GL.BindTexture(TextureTarget.Texture2D, TextureID);
-                Program.UniformMatrix4("model", ref ModelMatrix);
+                //Program.UniformMatrix4("model", ref ModelMatrix);
                 // Draw uniforms if material mapping is enabled.
                 if (Material != null && Program.ProgramName == "Dice")
                 {

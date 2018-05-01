@@ -14,7 +14,8 @@ namespace Polymono.Game {
         public PropertyGroup Group;
         public Vector3 BoardLocationOffset;
 
-        public Property(int id, string name, int price, PropertyGroup group, Vector3 boardLocationOffset) : base()
+        public Property(int id, string name, int price, PropertyGroup group, Vector3 boardLocationOffset) 
+            : base(Vector3.Zero, Vector3.Zero, Vector3.One)
         {
             PropertyID = id;
             Name = name;

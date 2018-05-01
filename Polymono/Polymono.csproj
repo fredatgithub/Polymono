@@ -106,6 +106,7 @@
     <Compile Include="Game\Dice.cs" />
     <Compile Include="Game\GameObject.cs" />
     <Compile Include="Game\GameState.cs" />
+    <Compile Include="Graphics\Components\Checkbox.cs" />
     <Compile Include="Graphics\Components\ControlFactory.cs" />
     <Compile Include="Graphics\Unused\Button.cs" />
     <Compile Include="Graphics\Camera.cs" />

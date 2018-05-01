@@ -14,6 +14,8 @@ namespace Polymono.Networking
     {
         // Game client reference.
         public GameClient GameClient;
+        // Network sockets for clients.
+        //public ISocket[] Clients;
         // Packet queue (First in, first out)
         public Queue<PacketData> Packets;
         public bool WaitForClients = true;
@@ -24,10 +26,12 @@ namespace Polymono.Networking
         {
             GameClient = gameClient;
             V6 = v6;
-            GetClients()[ID] = GameClient.Board.AddPlayer(name);
+            //Clients = new ISocket[Polymono.MaxPlayers];
+            //Clients[ID] = new SocketHandler(v6);
+            GameClient.Board.AddPlayer(ID, name);
             GetClients()[ID].SetNetworkHandle(new SocketHandler(v6));
             Packets = new Queue<PacketData>();
-            Polymono.Debug("Server initialised.");
+            Polymono.Debug("Server initialised. [IPv6: " + v6 + "]");
         }
 
         public ref Player[] GetClients()
@@ -64,13 +68,13 @@ namespace Polymono.Networking
             {
                 // For every possible client...
                 // Begin accepting process.
-                AcceptAsync(i);
+                AcceptFromAsync(i);
             }
             // Finish when accepting processes have all started.
             // It is possible some processes will not finish.
         }
 
-        public async void AcceptAsync(int i)
+        public async void AcceptFromAsync(int i)
         {
             if (GetClients()[i] == null)
             {
@@ -80,7 +84,7 @@ namespace Polymono.Networking
                 Polymono.Debug($"Client[{i}] connected: {remoteHandler.GetSocket().RemoteEndPoint}");
                 // Begin receiving from the client.
                 PacketData packet = await ReceiveFromAsync(remoteHandler);
-                string name = packet.Data;
+                string name = Protocol.Connection.DecodeConnectionRequest(packet.Data);
                 Polymono.Debug($"Client[{i}] requesting name: " + name);
                 bool success = true;
                 foreach (var client in GetClients())
@@ -96,24 +100,56 @@ namespace Polymono.Networking
                 if (success)
                 {
                     Polymono.Debug($"Client[{i}] successfully connected: {remoteHandler.GetSocket().RemoteEndPoint}");
-                    GetClients()[i] = GameClient.Board.AddPlayer(name);
-                    GetClients()[i].NetworkHandler() = remoteHandler;
-                    await SendAsync(PacketHandler.Create(PacketType.Connect, i,
-                        Protocol.EncodeConnectionResponse(success, i)));
+                    await ConnectClient(i, remoteHandler, name);
                     while (true)
                     {
-                        PacketData temp = await ReceiveFromAsync(remoteHandler);
-                        Packets.Enqueue(temp);
+                        if (remoteHandler.GetSocket().Connected)
+                        {
+                            try
+                            {
+                                PacketData temp = await ReceiveFromAsync(remoteHandler);
+                                Packets.Enqueue(temp);
+                            }
+                            catch (IOException)
+                            {
+                                break;
+                            }
+                        }
+                        else
+                        {
+                            break;
+                        }
                     }
+                    // Manage a disconnection.
+                    DisconnectClient(i);
                 }
                 else
                 {
                     Polymono.Debug($"Client[{i}] failed to connect: {remoteHandler.GetSocket().RemoteEndPoint}");
                     await SendToAsync(remoteHandler, PacketHandler.Create(PacketType.Connect, i,
-                        Protocol.EncodeConnectionResponse(success, i)));
-                    AcceptAsync(i);
+                        Protocol.Connection.EncodeConnectionResponse(success, i)));
+                    AcceptFromAsync(i);
                 }
             }
+        }
+
+        public async Task ConnectClient(int i, ISocket socket, string name)
+        {
+            // Setup player in list of clients.
+            GameClient.Board.AddPlayer(i, name);
+            GetClients()[i].NetworkHandler() = socket;
+            // Send connection notice to all clients.
+            await SendAsync(PacketHandler.Create(PacketType.Connect, i,
+                Protocol.Connection.EncodeConnectionResponse(true, i)));
+        }
+
+        public async void DisconnectClient(int i)
+        {
+            // Remove disconnected client from list of clients.
+            GetClients()[i] = null;
+            // Send disconnection notice to all clients.
+            await SendAsync(PacketHandler.Create(PacketType.Disconnect,
+                Protocol.Connection.EncodeDisconnect(i)));
         }
 
         public async Task SendToAsync(ISocket socket, params Packet[] packets)
@@ -173,14 +209,27 @@ namespace Polymono.Networking
                 // Await for information from client.
                 try
                 {
-                    await socket.ReceiveAsync(buffer, 0, PacketHandler.BufferSize);
+                    if (socket.GetSocket().Connected)
+                    {
+                        await socket.ReceiveAsync(buffer, 0, PacketHandler.BufferSize);
+                    }
+                    else
+                    {
+                        throw new IOException();
+                    }
+                }
+                catch (SocketException se)
+                {
+                    Polymono.Error(se.Message);
+                    Polymono.ErrorF(se.StackTrace);
+                    throw se;
                 }
                 catch (IOException ioe)
                 {
                     Polymono.Error(ioe.Message);
                     Polymono.ErrorF(ioe.StackTrace);
                     // TODO: Disconnect client, unmanaged disconnect.
-                    return packetData;
+                    throw ioe;
                 }
                 Polymono.Debug($"Packet received: {socket.GetSocket().RemoteEndPoint}");
                 #endregion

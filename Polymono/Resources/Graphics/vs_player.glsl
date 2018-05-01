@@ -10,6 +10,7 @@ out vec2 fTexture;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
+uniform vec4 colour;
 
 void main()
 {

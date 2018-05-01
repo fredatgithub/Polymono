@@ -14,6 +14,12 @@ using System.Threading.Tasks;
 
 namespace Polymono
 {
+    public enum GameState
+    {
+        Lobby, Rolling, Moving, Trading, Waiting,
+        Menu
+    }
+
     class GameClient : AGameClient
     {
         // Game states
@@ -43,6 +49,7 @@ namespace Polymono
         public Textbox TxtNetName;
         public Label LblNetAddress;
         public Textbox TxtNetAddress;
+        public Checkbox ChkNetType;
         public Label LblNetPort;
         public Textbox TxtNetPort;
         public Button BtnNetJoin;
@@ -79,6 +86,8 @@ namespace Polymono
         public Skybox Skybox;
         public Light ActiveLight = new Light(new Vector3(0.0f, 5.0f, 0.0f), new Vector3(1.0f, 1.0f, 1.0f));
 
+        public Dictionary<string, AModel> AModels;
+
         public INetwork network;
         public INetwork Network {
             set {
@@ -104,8 +113,9 @@ namespace Polymono
 
         public GameClient(int playerCount) : base()
         {
-            State = new GameState(playerCount);
+            State = GameState.Menu;
             Camera = new Camera(new Vector3(0.0f, 1.0f, 0.0f));
+            AModels = new Dictionary<string, AModel>();
         }
 
         protected override void LoadObjects()
@@ -117,8 +127,20 @@ namespace Polymono
             Board = new Board(Programs[ProgramID.Full], Programs[ProgramID.Player], this);
             Board.Model.CreateBuffer();
             Models.Add(Board.Model.ID, Board.Model);
+            // Player model
+            AModels.Add("Player", new ModelObject(
+                Programs[ProgramID.Player],
+                @"Resources\Objects\player.obj",
+                Color4.White,
+                Vector3.Zero,
+                Vector3.Zero,
+                new Vector3(0.1f),
+                @"Resources\Objects\player.mtl",
+                @"b0b0b0"));
+            AModels["Player"].CreateBuffer();
             // Dice
-            Dice = new Dice(Programs[ProgramID.Dice]);
+            Dice = new Dice(Programs[ProgramID.Dice],
+                new Vector3(0.25f, 0.05f, 0.0f), Vector3.Zero, new Vector3(0.05f));
             Dice.Model.CreateBuffer();
             Models.Add(Dice.Model.ID, Dice.Model);
 
@@ -228,6 +250,12 @@ namespace Polymono
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.7f, 0.7f, 0.0f, 0.8f),
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f),
                 "");
+            ChkNetType = new Checkbox(Programs[ProgramID.Button],
+                new Vector3((Width / 2) - 160 + 128 + 8, Height - (64 * 3), 0.0f), Vector3.Zero, Vector3.One,
+                Controls, Models, MnuNetwork,
+                32, 32, 2, Width, Height, Matrix4.Identity,
+                new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.7f, 0.7f, 0.0f, 0.8f),
+                new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f));
             LblNetPort = new Label(Programs[ProgramID.Label],
                 new Vector3((Width / 2) + 32, Height - (64 * 3) + 24, 0.0f), Vector3.Zero, Vector3.One,
                 Controls, Models, MnuNetwork,
@@ -250,18 +278,20 @@ namespace Polymono
                 {
                     try
                     {
-                        Server server = new Server(this, TxtNetName.Text, true);
+                        bool v6;
+                        if (ChkNetType.State == ControlState.Clicked)
+                        {
+                            v6 = true;
+                        }
+                        else
+                        {
+                            v6 = false;
+                        }
+                        Server server = new Server(this, TxtNetName.Text, v6);
                         int port = Convert.ToInt32(TxtNetPort.Text);
                         server.LocalHandler().Bind(port);
                         server.LocalHandler().Listen(10);
-                        new Thread(() =>
-                        {
-                            server.Start();
-                        })
-                        {
-                            Name = "NetworkThread",
-                            Priority = ThreadPriority.BelowNormal
-                        }.Start();
+                        server.Start();
                         Network = server;
                         MnuNetwork.HideAll();
                         MnuMessage.ShowAll();
@@ -289,17 +319,20 @@ namespace Polymono
                 {
                     try
                     {
-                        Client client = new Client(this, true);
+                        bool v6;
+                        if (ChkNetType.State == ControlState.Clicked)
+                        {
+                            v6 = true;
+                        }
+                        else
+                        {
+                            v6 = false;
+                        }
+                        Client client = new Client(this, v6);
                         string address = TxtNetAddress.Text;
                         int port = Convert.ToInt32(TxtNetPort.Text);
                         string name = TxtNetName.Text;
-                        new Thread(() =>
-                        {
-                            client.ConnectAsync(address, port, name);
-                        })
-                        {
-                            Name = "NetworkThread"
-                        }.Start();
+                        client.ConnectAsync(address, port, name);
                         Network = client;
                         MnuNetwork.HideAll();
                         MnuMessage.ShowAll();
@@ -371,7 +404,7 @@ namespace Polymono
                 new Color4(0.1f, 0.1f, 0.1f, 0.6f), new Color4(0.0f, 0.6f, 0.7f, 0.8f),
                 () =>
                 {
-                    Board.GetPlayer().MoveSpaces(Dice.GetNumber() + Dice.GetNumber());
+                    Board.MoveSpaces(Dice.GetNumber() + Dice.GetNumber(), Board.CurrentPlayerID);
                     return Task.Delay(0);
                 }, "Roll Dice");
             BtnPurchaseProperty = new Button(Programs[ProgramID.Button],
@@ -426,6 +459,8 @@ namespace Polymono
             #endregion
         }
 
+        bool IsMovingDone = true;
+
         protected override void UpdateObjects()
         {
             // Update inputs and camera.
@@ -437,6 +472,26 @@ namespace Polymono
             LblTest.Update();
             #region Network updating
             UpdateGameFromNetwork();
+            #endregion
+            #region Update game states
+            // If a player should move
+            // Move until
+            SetWindowTitle(State.ToString());
+            switch (State)
+            {
+                case GameState.Lobby:
+                    break;
+                case GameState.Rolling:
+                    break;
+                case GameState.Moving:
+                    break;
+                case GameState.Trading:
+                    break;
+                case GameState.Waiting:
+                    break;
+                default:
+                    break;
+            }
             #endregion
             #region Update Matrices.
             // Update view matrices.
@@ -461,6 +516,11 @@ namespace Polymono
             {
                 model.UpdateModelMatrix();
             }
+            Dice.UpdateModelMatrix();
+            foreach (var player in Board.GetPlayers())
+            {
+                player.UpdateModelMatrix();
+            }
             #endregion
         }
 
@@ -470,6 +530,7 @@ namespace Polymono
             Programs[ProgramID.Skybox].UseProgram();
             Programs[ProgramID.Skybox].UniformMatrix4("projection", ref ProjectionMatrix);
             Programs[ProgramID.Skybox].UniformMatrix4("view", ref StaticViewMatrix);
+            Programs[ProgramID.Skybox].UniformMatrix4("model", ref Skybox.ModelMatrix);
             Programs[ProgramID.Skybox].Uniform1("time", (float)RTime);
             Skybox.Render();
             //// Basic renderer.
@@ -485,15 +546,21 @@ namespace Polymono
             Programs[ProgramID.Dice].Uniform1("light_diffuseIntensity", ActiveLight.AmbientIntensity);
             Programs[ProgramID.Dice].UniformMatrix4("projection", ref ProjectionMatrix);
             Programs[ProgramID.Dice].UniformMatrix4("view", ref ViewMatrix);
+            Programs[ProgramID.Dice].UniformMatrix4("model", ref Dice.ModelMatrix);
             Programs[ProgramID.Dice].Uniform1("time", (float)RTime);
             Dice.Model.Render();
             // Player renderer.
             Programs[ProgramID.Player].UseProgram();
-            foreach (var player in Board.GetPlayers())
+            foreach (var player in Board.Players)
             {
-                Programs[ProgramID.Player].UniformMatrix4("projection", ref ProjectionMatrix);
-                Programs[ProgramID.Player].UniformMatrix4("view", ref ViewMatrix);
-                player.Model.Render();
+                if (player != null)
+                {
+                    Programs[ProgramID.Player].UniformMatrix4("projection", ref ProjectionMatrix);
+                    Programs[ProgramID.Player].UniformMatrix4("view", ref ViewMatrix);
+                    Programs[ProgramID.Player].UniformMatrix4("model", ref player.ModelMatrix);
+                    Programs[ProgramID.Player].Uniform4("colour", ref player.Colour);
+                    player.Model.Render();
+                }
             }
         }
 
@@ -526,9 +593,48 @@ namespace Polymono
             }
             foreach (var packet in packets)
             {
-                if (packet.Type == PacketType.Message)
+                int senderID;
+                switch (packet.Type)
                 {
-                    LblMsgBox.Text += Environment.NewLine + packet.Data;
+                    case PacketType.Null:
+                        Polymono.Print(ConsoleLevel.Warning, "Protocol type is null.");
+                        break;
+                    case PacketType.Message:
+                        string message = packet.Data;
+                        LblMsgBox.Text += Environment.NewLine + packet.Data;
+                        Polymono.Debug($"Packet decoding: {packet.Type} [message:{message}]");
+                        break;
+                    case PacketType.MoveState:
+                        break;
+                    case PacketType.DiceRoll:
+                        int diceOne = Protocol.Game.DecodeDiceRollOne(packet.Data);
+                        int diceTwo = Protocol.Game.DecodeDiceRollTwo(packet.Data);
+                        senderID = Protocol.Game.DecodeDiceRollSenderID(packet.Data);
+                        Polymono.Debug($"Packet decoding: {packet.Type} [Dice One:{diceOne}] [Dice Two:{diceTwo}] [sender ID:{senderID}]");
+                        // Move requested player to position.
+                        if (Board.CurrentPlayerTurn == senderID)
+                        {
+                            Board.MoveSpaces(diceOne + diceTwo, senderID);
+                            State = GameState.Moving;
+                        } // Else :: Invalid state for packet.
+                        else
+                        {
+                            Polymono.Warning($"Dice roll packet received with wrong sender. [Sender ID: {senderID}] [Current ID: {Board.CurrentPlayerTurn}]");
+                        }
+                        break;
+                    case PacketType.Move:
+                        senderID = Protocol.Game.DecodeMoveDone(packet.Data);
+                        Polymono.Debug($"Packet decoding: {packet.Type} [sender ID:{senderID}]");
+                        if (State == GameState.Moving)
+                        {
+                            Board.FinalisePlayerMovement();
+                            State = GameState.Waiting;
+                            // Finished moving, waiting for next state.
+                        } // Else :: Invalid state for packet.
+                        break;
+                    default:
+                        Polymono.Debug($"Unmanaged protocol type: {packet.Type}");
+                        break;
                 }
             }
         }

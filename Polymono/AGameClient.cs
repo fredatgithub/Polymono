@@ -118,7 +118,7 @@ namespace Polymono
         {
             UTimeDelta = e.Time;
             UTime += e.Time;
-            Title = $"Polymono | FPS: {1f / RenderPeriod:0} | TPS: {1f / UpdatePeriod:0}";
+            SetWindowTitle("");
             // Error handling.
             if (FatalError && StopForErrors)
             {
@@ -128,6 +128,11 @@ namespace Polymono
                 StopForErrors = false;
             }
             UpdateObjects();
+        }
+
+        protected void SetWindowTitle(string state)
+        {
+            Title = $"Polymono | FPS: {1f / RenderPeriod:0} | TPS: {1f / UpdatePeriod:0} | State: {state}";
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)

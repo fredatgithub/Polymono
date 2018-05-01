@@ -22,10 +22,11 @@ namespace Polymono.Game {
     class Dice : GameObject {
         public Random Random;
 
-        public Dice(ShaderProgram program)
+        public Dice(ShaderProgram program, Vector3 position, Vector3 rotation, Vector3 scaling)
+            : base(position, rotation, scaling)
         {
             Model = new ModelObject(program, @"Resources\Objects\cube.obj",
-                    new Vector3(0.25f, 0.05f, 0.0f), Vector3.Zero, new Vector3(0.05f),
+                    Vector3.Zero, Vector3.Zero, Vector3.One,
                     @"Resources\Textures\cube_textured_uv.png",
                     @"Resources\Objects\cube.mtl",
                     @"Material");

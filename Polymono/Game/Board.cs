@@ -14,11 +14,13 @@ namespace Polymono.Game
         public GameClient GameClient;
         public Property[] Properties;
         public Player[] Players;
-        public Dictionary<Player, int> PlayerLocations;
+        public int[] PlayerLocations;
         private ShaderProgram PlayerProgram;
         public int CurrentPlayerID;
+        internal int CurrentPlayerTurn;
 
         public Board(ShaderProgram boardProgram, ShaderProgram playerProgram, GameClient gameClient)
+            : base(Vector3.Zero, Vector3.Zero, Vector3.One)
         {
             GameClient = gameClient;
             // Set vertices.
@@ -86,26 +88,71 @@ namespace Polymono.Game
                 }
             }
             Players = new Player[Polymono.MaxPlayers];
-            PlayerLocations = new Dictionary<Player, int>();
+            PlayerLocations = new int[Polymono.MaxPlayers];
             PlayerProgram = playerProgram;
             // Populate all players.
         }
 
-        public Player AddPlayer(string name)
+        public void AddPlayer(int id, string name)
         {
+            Polymono.Debug("Board::AddPlayer(string): Create new player.");
             Player player = new Player(PlayerProgram, this)
             {
                 PlayerName = name
             };
-            player.Model.CreateBuffer();
-            PlayerLocations.Add(player, 0);
-            GameClient.Models.Add(player.Model.ID, player.Model);
-            return player;
+            Players[id] = player;
+            SetPlayerPosition(id, 0);
         }
 
-        public int GetPlayerLocation(Player player)
+        public void SetPlayerPosition(int playerID, int propertyID)
         {
-            return PlayerLocations[player];
+            Vector3 propertyOffset = Properties[propertyID].BoardLocationOffset;
+            Vector3 playerOffset = GetOffsetByPlayers(propertyID);
+            PlayerLocations[playerID] = propertyID;
+            Players[playerID].Position = propertyOffset + playerOffset;
+        }
+
+        public Vector3 AdvanceSpace(int playerID)
+        {
+            int propertyID = PlayerLocations[playerID];
+            Vector3 nextPropertyOffset = Properties[++propertyID].BoardLocationOffset;
+            return nextPropertyOffset + GetOffsetByPlayers(propertyID);
+        }
+
+        private Vector3 GetOffsetByPlayers(int propertyID, float scaleFactor = 0.1f)
+        {
+            int playersAtLocation = 0;
+            foreach (var player in GetPlayers())
+            {
+                if (PlayerLocations[player.PlayerID] == propertyID)
+                {
+                    playersAtLocation++;
+                }
+            }
+            switch (playersAtLocation)
+            {
+                case 0:
+                    return new Vector3(scaleFactor, 0, 0);
+                case 1:
+                    return new Vector3(0, 0, scaleFactor);
+                case 2:
+                    return new Vector3(scaleFactor, 0, scaleFactor);
+                case 3:
+                    return new Vector3(-scaleFactor, 0, 0);
+                case 4:
+                    return new Vector3(0, 0, -scaleFactor);
+                case 5:
+                    return new Vector3(-scaleFactor, 0, -scaleFactor);
+                case 6:
+                    return new Vector3(scaleFactor, 0, -scaleFactor);
+                case 7:
+                    return new Vector3(-scaleFactor, 0, scaleFactor);
+                default:
+                    Random rnd = new Random();
+                    return new Vector3(
+                        ((float)rnd.NextDouble() + 0.5f) * scaleFactor, 0,
+                        ((float)rnd.NextDouble() + 0.5f) * scaleFactor);
+            }
         }
 
         public Player GetPlayer(int id)
@@ -256,6 +303,21 @@ namespace Polymono.Game
                     Properties[id] = new Property(id, "Boardwalk", 400, PropertyGroup.Blue, vector);
                     break;
             }
+        }
+
+        internal bool UpdatePositions()
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void FinalisePlayerMovement()
+        {
+            throw new NotImplementedException();
+        }
+
+        internal void MoveSpaces(int v, int senderID)
+        {
+            throw new NotImplementedException();
         }
     }
 }

@@ -40,7 +40,7 @@ namespace Polymono.Graphics
             }
             else
             {
-                Polymono.Debug($"Program [{ProgramID}]: Uniform1 could not be set. [{uniformName}] does not exist.");
+                Polymono.Warning($"Program [{ProgramID}]: Uniform1 could not be set. [{uniformName}] does not exist.");
             }
         }
 
@@ -53,7 +53,20 @@ namespace Polymono.Graphics
             }
             else
             {
-                Polymono.Debug($"Program [{ProgramID}]: Uniform3 could not be set. [{uniformName}] does not exist.");
+                Polymono.Warning($"Program [{ProgramID}]: Uniform3 could not be set. [{uniformName}] does not exist.");
+            }
+        }
+
+        public void Uniform4(string uniformName, ref Vector4 vector)
+        {
+            int location = GetUniform(uniformName);
+            if (location != -1)
+            {
+                GL.Uniform4(location, ref vector);
+            }
+            else
+            {
+                Polymono.Warning($"Program [{ProgramID}]: Uniform4 could not be set. [{uniformName}] does not exist.");
             }
         }
 
@@ -66,7 +79,7 @@ namespace Polymono.Graphics
             }
             else
             {
-                Polymono.Debug($"Program [{ProgramID}]: UniformMatrix4 could not be set. [{uniformName}] does not exist.");
+                Polymono.Warning($"Program [{ProgramID}]: UniformMatrix4 could not be set. [{uniformName}] does not exist.");
             }
         }
 
@@ -98,7 +111,7 @@ namespace Polymono.Graphics
                 {
                     // Get the shader information log on compilation failure.
                     infoLog = GL.GetShaderInfoLog(VertexShader);
-                    Polymono.Debug($"Shader [{location}:{VertexShader}] failed to compile: {infoLog}");
+                    Polymono.Warning($"Shader [{location}:{VertexShader}] failed to compile: {infoLog}");
                     return false;
                 }
             }
@@ -116,7 +129,7 @@ namespace Polymono.Graphics
                 {
                     // Get the shader information log on compilation failure.
                     infoLog = GL.GetShaderInfoLog(FragmentShader);
-                    Polymono.Debug($"Shader [{location}:{FragmentShader}] failed to compile: {infoLog}");
+                    Polymono.Warning($"Shader [{location}:{FragmentShader}] failed to compile: {infoLog}");
                     return false;
                 }
             }
@@ -141,7 +154,7 @@ namespace Polymono.Graphics
             {
                 // Get the program ifnormation log on linking failure.
                 GL.GetProgramInfoLog(ProgramID, out infoLog);
-                Polymono.Debug($"Program [{ProgramName}:{ProgramID}] failed to link: {infoLog}");
+                Polymono.Warning($"Program [{ProgramName}:{ProgramID}] failed to link: {infoLog}");
                 GL.DeleteShader(VertexShader);
                 GL.DeleteShader(FragmentShader);
                 return false;

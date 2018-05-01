@@ -185,6 +185,12 @@ namespace Polymono
             Print(ConsoleLevel.DebugGL, text, newline);
         }
 
+        public static void Warning(string text, bool newline = true)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            Print(ConsoleLevel.Warning, text, newline);
+        }
+
         /// <summary>
         /// Prints given text to the console, dependant on logging levels, without prefixed thread information.
         /// </summary>
@@ -238,10 +244,17 @@ namespace Polymono
             Console.ForegroundColor = ConsoleColor.Cyan;
             PrintF(ConsoleLevel.Debug, text, newline);
         }
+
         public static void DebugGLF(string text, bool newline = true)
         {
             Console.ForegroundColor = ConsoleColor.Cyan;
             PrintF(ConsoleLevel.DebugGL, text, newline);
+        }
+
+        public static void WarningF(string text, bool newline = true)
+        {
+            Console.ForegroundColor = ConsoleColor.Yellow;
+            PrintF(ConsoleLevel.Warning, text, newline);
         }
         #endregion
     }

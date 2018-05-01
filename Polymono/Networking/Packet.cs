@@ -13,6 +13,9 @@ namespace Polymono.Networking
         Connect,
         Disconnect,
         Message,
+        MoveState,
+        Move,
+        DiceRoll,
     }
 
     class Packet
@@ -116,7 +119,7 @@ namespace Polymono.Networking
             {
                 sb.Append(b + " ");
             }
-            return sb.ToString().Trim();
+            return sb.ToString();
         }
     }
 }

@@ -14,24 +14,26 @@ namespace Polymono.Game {
         public int PlayerID;
         public string PlayerName;
         public Board Board;
-        public Property CurrentPosition;
+        //public Property CurrentPosition;
         public ISocket networkHandle;
+        public bool RequiresBuffer = true;
+        public Vector4 Colour;
 
         public Player(ShaderProgram program, Board board)
+            : base(Vector3.Zero, Vector3.Zero, new Vector3(0.1f))
         {
             PlayerID = TOTAL_PLAYER_IDS++;
             Board = board;
             Vector3 offset = board.Properties[0].BoardLocationOffset;
             offset.X += (PlayerID / 5f);
-            Model = new ModelObject(
-                program,
-                @"Resources\Objects\player.obj",
-                GetPlayerColour(PlayerID),
-                new Vector3(offset),
-                Vector3.Zero,
-                new Vector3(0.1f, 0.1f, 0.1f),
-                @"Resources\Objects\player.mtl",
-                @"b0b0b0");
+            Colour = GetPlayerColour(PlayerID);
+            Model = (ModelObject)Board.GameClient.AModels["Player"];
+        }
+
+        public void TranslateAndUpdate(Vector3 position)
+        {
+            Position = position;
+            ModelMatrix = Matrix4.CreateTranslation(Position);
         }
 
         public void SetNetworkHandle(ISocket socket)
@@ -44,56 +46,55 @@ namespace Polymono.Game {
             return ref networkHandle;
         }
 
-        public Color4 GetRandomColour()
+        public Vector4 GetRandomColour()
         {
             Random random = new Random();
             float r = (float)random.NextDouble() * 255f;
             float g = (float)random.NextDouble() * 255f;
             float b = (float)random.NextDouble() * 255f;
             float a = (float)random.NextDouble() * 255f;
-            return new Color4(r, g, b, a);
+            return new Vector4(r, g, b, a);
         }
 
-        public Color4 GetPlayerColour(int playerID)
+        public Vector4 GetPlayerColour(int playerID)
         {
+            Color4 colour;
             switch (playerID)
             {
                 case 0:
-                    return Color4.White;
+                    colour = Color4.White;
+                    break;
                 case 1:
-                    return Color4.Red;
+                    colour = Color4.Red;
+                    break;
                 case 2:
-                    return Color4.Yellow;
+                    colour = Color4.Yellow;
+                    break;
                 case 3:
-                    return Color4.Green;
+                    colour = Color4.Green;
+                    break;
                 case 4:
-                    return Color4.Blue;
+                    colour = Color4.Blue;
+                    break;
                 case 5:
-                    return Color4.Pink;
+                    colour = Color4.Pink;
+                    break;
                 case 6:
-                    return Color4.Purple;
+                    colour = Color4.Purple;
+                    break;
                 case 7:
-                    return Color4.Orange;
+                    colour = Color4.Orange;
+                    break;
                 default:
-                    return Color4.Black;
+                    colour = Color4.Black;
+                    break;
             }
+            return ColourToVector(colour);
         }
 
-        public void MoveToSpace(int spaceID)
+        public Vector4 ColourToVector(Color4 colour)
         {
-            Model.Position = Board.Properties[spaceID].BoardLocationOffset;
-            Board.PlayerLocations[this] = spaceID;
-        }
-
-        public void MoveSpaces(int spacesToMove)
-        {
-            int spaceID = Board.GetPlayerLocation(this) + spacesToMove;
-            if (spaceID >= 40)
-            {
-                spaceID %= 40;
-            }
-            Model.Position = Board.Properties[spaceID].BoardLocationOffset;
-            Board.PlayerLocations[this] = spaceID;
+            return new Vector4(colour.R, colour.G, colour.B, colour.A);
         }
     }
 }

@@ -59,10 +59,10 @@ namespace Polymono.Networking
             await ReceiveAsync();
             // Check responses in queue.
             PacketData packet = GetPacketQueue().Dequeue();
-            bool sucess = Protocol.DecodeConnectionResponseSuccess(packet.Data);
+            bool sucess = Protocol.Connection.DecodeConnectionResponseSuccess(packet.Data);
             if (sucess)
             {
-                int id = Protocol.DecodeConnectionResponseID(packet.Data);
+                int id = Protocol.Connection.DecodeConnectionResponseID(packet.Data);
                 GetClients()[id] = GetClients()[ID];
                 ID = id;
                 Polymono.Debug("Connection to server successful: " + LocalHandler().GetSocket().RemoteEndPoint);
@@ -106,6 +106,12 @@ namespace Polymono.Networking
                 Polymono.Debug("Received partial packet.");
             }
             await ReceiveAsync();
+        }
+
+        public void DisconnectClient(int i)
+        {
+            // Remove disconnected client from list of clients.
+            GetClients()[i] = null;
         }
     }
 }
