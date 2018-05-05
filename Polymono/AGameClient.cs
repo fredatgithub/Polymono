@@ -10,7 +10,8 @@ using System.Runtime.InteropServices;
 
 namespace Polymono
 {
-    public enum ProgramID {
+    public enum ProgramID
+    {
         Full, Dice, Player, Skybox, Button, Label
     }
 
@@ -45,7 +46,7 @@ namespace Polymono
         public int SelectedObject = 0;
 
         public AGameClient()
-            : base(1280, 720, new GraphicsMode(32, 24, 0, 4))
+            : base(1280, 720, new GraphicsMode(32, 24, 0, 4), "Polymono")
         {
             Polymono.DebugGL($"OpenGL Renderer: {GL.GetString(StringName.Renderer)}");
             Polymono.DebugGL($"OpenGL Extensions: {GL.GetString(StringName.Extensions)}");
@@ -77,27 +78,28 @@ namespace Polymono
             GL.Enable(EnableCap.DebugOutput);
             GL.Enable(EnableCap.DebugOutputSynchronous);
             GL.DebugMessageCallback((DebugSource source, DebugType type, int id,
-                DebugSeverity severity, int length, IntPtr message, IntPtr userParam) => {
-                    switch (type)
-                    {
-                        case DebugType.DebugTypeError:
-                            Polymono.Error($"OpenGL error ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
-                            Polymono.ErrorF(Environment.StackTrace);
-                            FatalError = true;
-                            break;
-                        case DebugType.DebugTypeDeprecatedBehavior:
-                        case DebugType.DebugTypeUndefinedBehavior:
-                        case DebugType.DebugTypePortability:
-                        case DebugType.DebugTypePerformance:
-                        case DebugType.DebugTypeOther:
-                        case DebugType.DebugTypeMarker:
-                        case DebugType.DebugTypePushGroup:
-                        case DebugType.DebugTypePopGroup:
-                        default:
-                            Polymono.DebugGL($"OpenGL debug message.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
-                            break;
-                    }
-                }, (IntPtr)0);
+                DebugSeverity severity, int length, IntPtr message, IntPtr userParam) =>
+            {
+                switch (type)
+                {
+                    case DebugType.DebugTypeError:
+                        Polymono.Error($"OpenGL error ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
+                        Polymono.ErrorF(Environment.StackTrace);
+                        FatalError = true;
+                        break;
+                    case DebugType.DebugTypeDeprecatedBehavior:
+                    case DebugType.DebugTypeUndefinedBehavior:
+                    case DebugType.DebugTypePortability:
+                    case DebugType.DebugTypePerformance:
+                    case DebugType.DebugTypeOther:
+                    case DebugType.DebugTypeMarker:
+                    case DebugType.DebugTypePushGroup:
+                    case DebugType.DebugTypePopGroup:
+                    default:
+                        Polymono.DebugGL($"OpenGL debug message.{Environment.NewLine}ID: {id + Environment.NewLine}Message: {Marshal.PtrToStringAnsi(message, length)}");
+                        break;
+                }
+            }, (IntPtr)0);
             // Add shader programs.
             Programs.Add(ProgramID.Full,
                 new ShaderProgram("vs_full.glsl", "fs_full.glsl", "Full"));
@@ -118,7 +120,6 @@ namespace Polymono
         {
             UTimeDelta = e.Time;
             UTime += e.Time;
-            SetWindowTitle("");
             // Error handling.
             if (FatalError && StopForErrors)
             {
@@ -130,9 +131,9 @@ namespace Polymono
             UpdateObjects();
         }
 
-        protected void SetWindowTitle(string state)
+        protected void SetWindowTitle(string net, string name, string state, string turn)
         {
-            Title = $"Polymono | FPS: {1f / RenderPeriod:0} | TPS: {1f / UpdatePeriod:0} | State: {state}";
+            Title = $"Polymono | FPS: {1f / RenderPeriod:0} | TPS: {1f / UpdatePeriod:0} | Net: {net} | Name: {name} | State: {state} | Turn: {turn}";
         }
 
         protected override void OnRenderFrame(FrameEventArgs e)

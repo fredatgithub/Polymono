@@ -14,11 +14,8 @@ namespace Polymono.Networking
     {
         // Game client reference.
         public GameClient GameClient;
-        // Network sockets for clients.
-        //public ISocket[] Clients;
-        // Packet queue (First in, first out)
-        public Queue<PacketData> Packets;
-        public bool WaitForClients = true;
+        public Queue<Packet> Packets;
+        public bool AcceptClients = true;
         public int ID = 0;
         public bool V6;
 
@@ -30,7 +27,7 @@ namespace Polymono.Networking
             //Clients[ID] = new SocketHandler(v6);
             GameClient.Board.AddPlayer(ID, name);
             GetClients()[ID].SetNetworkHandle(new SocketHandler(v6));
-            Packets = new Queue<PacketData>();
+            Packets = new Queue<Packet>();
             Polymono.Debug("Server initialised. [IPv6: " + v6 + "]");
         }
 
@@ -39,7 +36,7 @@ namespace Polymono.Networking
             return ref GameClient.Board.Players;
         }
 
-        public ref Queue<PacketData> GetPacketQueue()
+        public ref Queue<Packet> GetPacketQueue()
         {
             return ref Packets;
         }
@@ -80,11 +77,16 @@ namespace Polymono.Networking
             {
                 Polymono.Debug($"Awaiting a connecting client[{i}]...");
                 ISocket remoteHandler = await LocalHandler().AcceptAsync();
+                if (!AcceptClients)
+                {
+                    // If marked for not accepting more clients, terminate accepting.
+                    return;
+                }
                 // Create new player
                 Polymono.Debug($"Client[{i}] connected: {remoteHandler.GetSocket().RemoteEndPoint}");
                 // Begin receiving from the client.
-                PacketData packet = await ReceiveFromAsync(remoteHandler);
-                string name = Protocol.Connection.DecodeConnectionRequest(packet.Data);
+                Packet packet = await ReceiveFromAsync(remoteHandler);
+                string name = Protocol.Connection.DecodeRequest(packet.Data);
                 Polymono.Debug($"Client[{i}] requesting name: " + name);
                 bool success = true;
                 foreach (var client in GetClients())
@@ -100,14 +102,28 @@ namespace Polymono.Networking
                 if (success)
                 {
                     Polymono.Debug($"Client[{i}] successfully connected: {remoteHandler.GetSocket().RemoteEndPoint}");
-                    await ConnectClient(i, remoteHandler, name);
+                    // Respond with success.
+                    await SendToAsync(remoteHandler, PacketHandler.Create(PacketType.Connect,
+                        Protocol.Connection.EncodeResponse(success, i)));
+                    // Send server/client information ALL clients.
+                    foreach (var client in GameClient.Board.GetPlayers())
+                    {
+                        await SendToAsync(remoteHandler, PacketHandler.Create(PacketType.ClientSync,
+                            Protocol.Connection.EncodeClient(client.PlayerID, client.PlayerName)));
+                    }
+                    // Create client locally.
+                    GameClient.Board.AddPlayer(i, name);
+                    GetClients()[i].NetworkHandler() = remoteHandler;
+                    // Broadcast full client update.
+                    await SendAsync(PacketHandler.Create(PacketType.ClientSync,
+                        Protocol.Connection.EncodeClient(i, name)));
                     while (true)
                     {
                         if (remoteHandler.GetSocket().Connected)
                         {
                             try
                             {
-                                PacketData temp = await ReceiveFromAsync(remoteHandler);
+                                Packet temp = await ReceiveFromAsync(remoteHandler);
                                 Packets.Enqueue(temp);
                             }
                             catch (IOException)
@@ -127,29 +143,19 @@ namespace Polymono.Networking
                 {
                     Polymono.Debug($"Client[{i}] failed to connect: {remoteHandler.GetSocket().RemoteEndPoint}");
                     await SendToAsync(remoteHandler, PacketHandler.Create(PacketType.Connect, i,
-                        Protocol.Connection.EncodeConnectionResponse(success, i)));
+                        Protocol.Connection.EncodeResponse(success, i)));
                     AcceptFromAsync(i);
                 }
             }
         }
 
-        public async Task ConnectClient(int i, ISocket socket, string name)
-        {
-            // Setup player in list of clients.
-            GameClient.Board.AddPlayer(i, name);
-            GetClients()[i].NetworkHandler() = socket;
-            // Send connection notice to all clients.
-            await SendAsync(PacketHandler.Create(PacketType.Connect, i,
-                Protocol.Connection.EncodeConnectionResponse(true, i)));
-        }
-
-        public async void DisconnectClient(int i)
+        public async void DisconnectClient(int i, string message = "")
         {
             // Remove disconnected client from list of clients.
             GetClients()[i] = null;
             // Send disconnection notice to all clients.
             await SendAsync(PacketHandler.Create(PacketType.Disconnect,
-                Protocol.Connection.EncodeDisconnect(i)));
+                Protocol.Connection.EncodeDisconnect(i, message)));
         }
 
         public async Task SendToAsync(ISocket socket, params Packet[] packets)
@@ -189,19 +195,18 @@ namespace Polymono.Networking
         public async Task SendAsync(ISocket socket, Packet packet)
         {
             Polymono.Debug($"Preparing packet to send to client: {socket.GetSocket().RemoteEndPoint}");
-            await socket.SendAsync(packet.ByteBuffer, 0, packet.ByteBuffer.Length);
+            await socket.SendAsync(packet.Bytes, 0, packet.Bytes.Length);
             Polymono.Debug($"Packet sent to client: {socket.GetSocket().RemoteEndPoint}");
         }
 
         /// <summary>
         /// Receive a single chain of packets from a client.
         /// </summary>
-        public async Task<PacketData> ReceiveFromAsync(ISocket socket)
+        public async Task<Packet> ReceiveFromAsync(ISocket socket)
         {
             Polymono.Debug($"Receiving started from: {socket.GetSocket().RemoteEndPoint}");
-            PacketData packetData = new PacketData();
-            bool terminate = false;
-            while (!terminate)
+            Packet outputPacket = null;
+            while (true)
             {
                 #region Create buffer then receive
                 // Create buffer for this packet.
@@ -235,43 +240,53 @@ namespace Polymono.Networking
                 #endregion
                 #region Analyse packet data
                 // Build packet from buffer data.
-                Packet packet = new Packet(buffer);
-                packet.Decode();
+                Packet bufferPacket = new Packet(buffer);
                 #endregion
                 #region Forward packet if needed
                 // Figure out where to send the packet, if appropriate.
-                if (packet.TargetID == int.MaxValue)
+                if (bufferPacket.TargetID == int.MaxValue)
                 {
                     for (int i = 1; i < GetClients().Length; i++)
                     {
                         if (GetClients()[i] != null && socket.GetSocket().RemoteEndPoint != RemoteHandler(i).GetSocket().RemoteEndPoint)
                         {
                             Polymono.Debug($"Forwarding packet to: {RemoteHandler(i).GetSocket().RemoteEndPoint}");
-                            await SendAsync(RemoteHandler(i), packet);
+                            await SendAsync(RemoteHandler(i), bufferPacket);
                         }
                     }
                 }
-                else if (packet.TargetID != 0)
+                else if (bufferPacket.TargetID != 0)
                 {
-                    if (GetClients()[packet.TargetID] != null)
+                    if (GetClients()[bufferPacket.TargetID] != null)
                     {
-                        Polymono.Debug($"Forwarding packet to: {RemoteHandler(packet.TargetID).GetSocket().RemoteEndPoint}");
-                        await SendAsync(RemoteHandler(packet.TargetID), packet);
+                        Polymono.Debug($"Forwarding packet to: {RemoteHandler(bufferPacket.TargetID).GetSocket().RemoteEndPoint}");
+                        await SendAsync(RemoteHandler(bufferPacket.TargetID), bufferPacket);
                     }
                 }
                 #endregion
                 #region Return packet information
-                if (packet.TargetID == int.MaxValue || packet.TargetID == 0)
+                if (bufferPacket.TargetID == int.MaxValue || bufferPacket.TargetID == 0)
                 {
-                    Polymono.Debug($"Appending packet data: {socket.GetSocket().RemoteEndPoint}");
-                    packetData.Data += packet.DataBuffer;
-                    packetData.Type = packet.Type;
-                    terminate = packet.Terminate;
+                    if (outputPacket == null)
+                    {
+                        // Create output packet.
+                        Polymono.Debug($"Creating packet data: {socket.GetSocket().RemoteEndPoint}");
+                        outputPacket = bufferPacket;
+                    }
+                    else
+                    {
+                        // Append packet info
+                        Polymono.Debug($"Appending packet data: {socket.GetSocket().RemoteEndPoint}");
+                        outputPacket.AppendData(bufferPacket.Data);
+                    }
+                    if (bufferPacket.Terminate)
+                    {
+                        Polymono.Debug($"Finalised packet receiving: {socket.GetSocket().RemoteEndPoint}");
+                        return outputPacket;
+                    }
                 }
                 #endregion
             }
-            Polymono.Debug($"Finalised packet receiving: {socket.GetSocket().RemoteEndPoint}");
-            return packetData;
         }
     }
 }

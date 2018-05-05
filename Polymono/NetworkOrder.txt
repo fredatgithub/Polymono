@@ -1,0 +1,11 @@
+﻿Server				|	Client
+-----------------------------------------------
+<Start server>		| <Start client>
+
+Accept clients		|
+
+					| Connect to Server
+					| [Send name]
+Respond success     |
+[Send bool]         |
+

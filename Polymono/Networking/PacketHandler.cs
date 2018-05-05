@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Networking
+namespace Polymono.Networking.Test
 {
     class PacketHandler
     {
@@ -15,6 +15,9 @@ namespace Polymono.Networking
         public const int TargetIDSize = 4;
         public const int TerminatorSize = 1;
         public const int DataSize = BufferSize - TypeSize - TargetIDSize - TerminatorSize;
+        internal static int TypeOffset;
+        internal static int TargetIDOffset;
+        internal static int DataOffset;
 
         public static Packet[] Create(PacketType type, int targetID, string data)
         {

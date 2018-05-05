@@ -36,92 +36,145 @@ namespace Polymono.Networking
             /// <summary>
             /// Name:[~ Bytes]
             /// </summary>
-            public static string EncodeConnectionRequest(string name)
+            public static byte[] EncodeRequest(string name)
             {
-                return name;
+                return Encoding.UTF8.GetBytes(name);
             }
-
-            /// <summary>
-            /// Name:[~ Bytes]
-            /// </summary>
-            public static string DecodeConnectionRequest(string name)
+            
+            public static string DecodeRequest(byte[] data)
             {
-                return name;
+                return GetString(data);
             }
 
             /// <summary>
             /// Success:[1 byte] ID:[4 bytes]
             /// </summary>
-            public static string EncodeConnectionResponse(bool success, int id)
+            public static byte[] EncodeResponse(bool success, int id)
             {
-                return Convert.ToByte(success) + Convert.ToString(id);
+                byte[] successBytes = BitConverter.GetBytes(success);
+                byte[] idBytes = BitConverter.GetBytes(id);
+                byte[] allBytes = new byte[sizeof(bool) + sizeof(int)];
+                Buffer.BlockCopy(successBytes, 0, allBytes, 
+                    0, 
+                    successBytes.Length);
+                Buffer.BlockCopy(idBytes, 0, allBytes,
+                    successBytes.Length, 
+                    idBytes.Length);
+                return allBytes;
             }
-
-            /// <summary>
-            /// Success:[1 byte]
-            /// </summary>
-            public static bool DecodeConnectionResponseSuccess(string data)
+            
+            public static bool DecodeResponseSuccess(byte[] data)
             {
-                return Convert.ToBoolean(data.Substring(0, sizeof(byte)));
+                return BitConverter.ToBoolean(data, 0);
             }
-
-            /// <summary>
-            /// ID:[4 bytes]
-            /// </summary>
-            public static int DecodeConnectionResponseID(string data)
+            
+            public static int DecodeResponseID(byte[] data)
             {
-                return Convert.ToInt32(data.Substring(sizeof(byte)));
-            }
-
-            /// <summary>
-            /// ID:[4 bytes]
-            /// </summary>
-            public static string EncodeDisconnect(int id)
-            {
-                return Convert.ToString(id);
+                return BitConverter.ToInt32(data, sizeof(bool));
             }
 
             /// <summary>
             /// ID:[4 bytes]
             /// </summary>
-            public static int DecodeDisconnect(string data)
+            public static byte[] EncodeClient(int id, string name)
             {
-                return Convert.ToInt32(data.Substring(0, sizeof(int)));
+                byte[] idBytes = BitConverter.GetBytes(id);
+                if (name.Length > 32)
+                    name.Substring(0, 32);
+                byte[] nameBytes = Encoding.UTF8.GetBytes(name);
+                byte[] allBytes = new byte[idBytes.Length + 32];
+                Buffer.BlockCopy(idBytes, 0, allBytes,
+                    0,
+                    idBytes.Length);
+                Buffer.BlockCopy(nameBytes, 0, allBytes,
+                    idBytes.Length,
+                    nameBytes.Length);
+                return allBytes;
+            }
+
+            public static int DecodeClientID(byte[] data)
+            {
+                return BitConverter.ToInt32(data, 0);
+            }
+
+            public static string DecodeClientName(byte[] data)
+            {
+                return GetString(data, sizeof(int), 32);
+            }
+
+            /// <summary>
+            /// ID:[4 bytes]
+            /// </summary>
+            public static byte[] EncodeDisconnect(int id, string message)
+            {
+                byte[] idBytes = BitConverter.GetBytes(id);
+                byte[] messageBytes = Encoding.UTF8.GetBytes(message);
+                byte[] allBytes = new byte[sizeof(int) + messageBytes.Length];
+                Buffer.BlockCopy(idBytes, 0, allBytes, 
+                    0, 
+                    idBytes.Length);
+                Buffer.BlockCopy(messageBytes, 0, allBytes,
+                    idBytes.Length, 
+                    messageBytes.Length);
+                return allBytes;
+            }
+
+            public static int DecodeDisconnectID(byte[] data)
+            {
+                return BitConverter.ToInt32(data, 0);
+            }
+
+            public static string DecodeDisconnectMessage(byte[] data)
+            {
+                return GetString(data, sizeof(int), data.Length - sizeof(int));
             }
         }
 
         public class Game
         {
             // Dice roll
-            public static string EncodeDiceRoll(int diceOne, int diceTwo, int senderID)
+            public static byte[] EncodeDiceRoll(int diceOne, int diceTwo, int senderID)
             {
-                return diceOne.ToString() + diceTwo.ToString() + senderID.ToString();
+                byte[] diceOneBytes = BitConverter.GetBytes(diceOne);
+                byte[] diceTwoBytes = BitConverter.GetBytes(diceTwo);
+                byte[] senderIDBytes = BitConverter.GetBytes(senderID);
+                byte[] allBytes = new byte[sizeof(int) * 3];
+                Buffer.BlockCopy(diceOneBytes, 0, allBytes, 
+                    0, 
+                    diceOneBytes.Length);
+                Buffer.BlockCopy(diceTwoBytes, 0, allBytes, 
+                    diceOneBytes.Length, 
+                    diceTwoBytes.Length);
+                Buffer.BlockCopy(senderIDBytes, 0, allBytes, 
+                    diceOneBytes.Length + diceTwoBytes.Length, 
+                    senderIDBytes.Length);
+                return allBytes;
             }
 
-            public static int DecodeDiceRollOne(string data)
+            public static int DecodeDiceRollOne(byte[] data)
             {
-                return Convert.ToInt32(data.Substring(sizeof(int)));
+                return BitConverter.ToInt32(data, 0);
             }
 
-            public static int DecodeDiceRollTwo(string data)
+            public static int DecodeDiceRollTwo(byte[] data)
             {
-                return Convert.ToInt32(data.Substring(sizeof(int), sizeof(int)));
+                return BitConverter.ToInt32(data, sizeof(int));
             }
 
-            public static int DecodeDiceRollSenderID(string data)
+            public static int DecodeDiceRollSenderID(byte[] data)
             {
-                return Convert.ToInt32(data.Substring(sizeof(int) * 2, sizeof(int)));
+                return BitConverter.ToInt32(data, sizeof(int) * 2);
             }
 
             // Move state
-            public static string EncodeMoveDone(int senderID)
+            public static byte[] EncodeMoveDone(int senderID)
             {
-                return senderID.ToString();
+                return BitConverter.GetBytes(senderID);
             }
 
-            public static int DecodeMoveDone(string data)
+            public static int DecodeMoveDone(byte[] data)
             {
-                return Convert.ToInt32(data.Substring(sizeof(int)));
+                return BitConverter.ToInt32(data, 0);
             }
 
             // Trade Request
@@ -132,28 +185,49 @@ namespace Polymono.Networking
             // Build Property
 
             // End Turn
-            public static string EncodeEndTurn(int senderID)
+            public static byte[] EncodeEndTurn(int senderID)
             {
-                return senderID.ToString();
+                return BitConverter.GetBytes(senderID);
             }
 
-            public static int DecodeEndTurnSenderID(string data)
+            public static int DecodeEndTurnSenderID(byte[] data)
             {
-                return Convert.ToInt32(data.Substring(sizeof(int)));
+                return BitConverter.ToInt32(data, 0);
+            }
+
+            // Start game
+            public static byte[] EncodeStartGame(int senderID)
+            {
+                return BitConverter.GetBytes(senderID);
+            }
+
+            public static int DecodeStartGameSenderID(byte[] data)
+            {
+                return BitConverter.ToInt32(data, 0);
             }
         }
 
         public class Chat
         {
-            public static string EncodeMessage(string message)
+            public static byte[] EncodeMessage(string message)
             {
-                return message;
+                return Encoding.UTF8.GetBytes(message);
             }
 
-            public static string DecodeMessage(string data)
+            public static string DecodeMessage(byte[] data)
             {
-                return data;
+                return Encoding.UTF8.GetString(data);
             }
+        }
+
+        protected static string GetString(byte[] data)
+        {
+            return GetString(data, 0, data.Length);
+        }
+
+        protected static string GetString(byte[] data, int index, int count)
+        {
+            return Encoding.UTF8.GetString(data, index, count).Replace("\0", "");
         }
     }
 }

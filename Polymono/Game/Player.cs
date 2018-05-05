@@ -18,6 +18,15 @@ namespace Polymono.Game {
         public ISocket networkHandle;
         public bool RequiresBuffer = true;
         public Vector4 Colour;
+        // Location information
+        public int CurrentLocation = 0;
+        public int NextLocation = 0;
+        public int FinalLocation = 0;
+
+        public int HighestRoll = 0;
+
+        public int Money = 1500;
+        internal bool IsInJail;
 
         public Player(ShaderProgram program, Board board)
             : base(Vector3.Zero, Vector3.Zero, new Vector3(0.1f))

@@ -5,7 +5,7 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 
-namespace Polymono.Networking
+namespace Polymono.Networking.Test
 {
     enum PacketType
     {
@@ -16,6 +16,8 @@ namespace Polymono.Networking
         MoveState,
         Move,
         DiceRoll,
+        StartGame,
+        EndTurn,
     }
 
     class Packet

@@ -105,7 +105,6 @@
     <Compile Include="AGameClient.cs" />
     <Compile Include="Game\Dice.cs" />
     <Compile Include="Game\GameObject.cs" />
-    <Compile Include="Game\GameState.cs" />
     <Compile Include="Graphics\Components\Checkbox.cs" />
     <Compile Include="Graphics\Components\ControlFactory.cs" />
     <Compile Include="Graphics\Unused\Button.cs" />
@@ -135,6 +134,8 @@
     <Compile Include="Networking\INetwork.cs" />
     <Compile Include="Networking\Packet.cs" />
     <Compile Include="Networking\SocketState.cs" />
+    <Compile Include="Networking\Test\Packet.cs" />
+    <Compile Include="Networking\Test\Protocol.cs" />
     <Compile Include="Polymono.cs" />
     <Compile Include="Game\Board.cs" />
     <Compile Include="Game\Player.cs" />
@@ -142,6 +143,7 @@
     <Compile Include="Graphics\ShaderProgram.cs" />
     <Compile Include="Graphics\Vertices\Vertex.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Content Include="NetworkOrder.txt" />
     <Content Include="Resources\Textures\cubedie.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
